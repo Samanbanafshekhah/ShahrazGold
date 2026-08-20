@@ -1,0 +1,36 @@
+{
+  "info": {
+    "name": "ShahrazGold API v1",
+    "description": "Core authentication, pricing and trade workflow. Money values are Rial strings.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{token}}","type":"string"}]},
+  "variable": [
+    {"key":"base_url","value":"http://localhost:8080/api/v1"},
+    {"key":"token","value":""},{"key":"category_id","value":"1"},{"key":"source_id","value":"1"},
+    {"key":"product_id","value":"1"},{"key":"product_price_id","value":"1"},{"key":"purchase_request_id","value":"1"}
+  ],
+  "item": [
+    {"name":"Auth","item":[
+      {"name":"Register","auth":{"type":"noauth"},"request":{"method":"POST","header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"first_name\": \"علی\",\n  \"last_name\": \"احمدی\",\n  \"mobile\": \"09123456789\",\n  \"email\": \"ali@example.com\",\n  \"password\": \"secret123\",\n  \"password_confirmation\": \"secret123\"\n}"},"url":"{{base_url}}/auth/register"}},
+      {"name":"Login","auth":{"type":"noauth"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 200) pm.collectionVariables.set('token', pm.response.json().data.access_token);"]}}],"request":{"method":"POST","header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"mobile\": \"09123456789\",\n  \"password\": \"secret123\",\n  \"device_name\": \"postman\"\n}"},"url":"{{base_url}}/auth/login"}},
+      {"name":"Me","request":{"method":"GET","header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/auth/me"}}
+    ]},
+    {"name":"Admin Catalog","item":[
+      {"name":"Create Category","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"title\":\"طلا\",\"slug\":\"gold\",\"display_order\":0,\"is_active\":true}"},"url":"{{base_url}}/admin/categories"}},
+      {"name":"Create Derived Product","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"product_category_id\":{{category_id}},\"name\":\"طلای ۱۸ عیار\",\"slug\":\"gold-18\",\"symbol\":\"GOLD18\",\"unit\":\"gram\",\"pricing_mode\":\"derived\",\"price_source_id\":{{source_id}},\"pricing_formula_key\":\"gold18_from_mesghal\",\"trade_adjustment_enabled\":true,\"trade_adjustment_percent\":\"1.00\"}"},"url":"{{base_url}}/admin/products"}},
+      {"name":"Create Mesghal Quote","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"price_rial\":\"300000000\",\"note\":\"مظنه لحظه‌ای\"}"},"url":"{{base_url}}/admin/price-sources/{{source_id}}/quotes"}}
+    ]},
+    {"name":"Trade","item":[
+      {"name":"Preview Buy by Quantity","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"product_id\":{{product_id}},\"trade_type\":\"customer_buy\",\"entry_mode\":\"quantity\",\"quantity\":\"1.250000\"}"},"url":"{{base_url}}/trade/preview"}},
+      {"name":"Preview Buy by Amount","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"product_id\":{{product_id}},\"trade_type\":\"customer_buy\",\"entry_mode\":\"amount\",\"amount_rial\":\"200000000\"}"},"url":"{{base_url}}/trade/preview"}},
+      {"name":"Preview Sell","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"product_id\":{{product_id}},\"trade_type\":\"customer_sell\",\"entry_mode\":\"quantity\",\"quantity\":\"0.500000\"}"},"url":"{{base_url}}/trade/preview"}},
+      {"name":"Create Purchase Request","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"client_reference\":\"50e75b94-58e3-4f44-8961-4e9f7e54f189\",\"expected_product_price_id\":{{product_price_id}},\"product_id\":{{product_id}},\"trade_type\":\"customer_buy\",\"entry_mode\":\"quantity\",\"quantity\":\"1.250000\"}"},"url":"{{base_url}}/purchase-requests"}}
+    ]},
+    {"name":"Admin Requests","item":[
+      {"name":"Approve","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"note\":\"تأیید شد\"}"},"url":"{{base_url}}/admin/purchase-requests/{{purchase_request_id}}/approve"}},
+      {"name":"Complete","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"note\":\"تکمیل شد\"}"},"url":"{{base_url}}/admin/purchase-requests/{{purchase_request_id}}/complete"}},
+      {"name":"Dashboard","request":{"method":"GET","header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/admin/dashboard"}}
+    ]}
+  ]
+}

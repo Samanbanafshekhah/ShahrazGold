@@ -1,0 +1,1 @@
+import{c as e,i as t,r as n,s as r,t as i}from"./auth-CqCc5CxK.js";async function a(e,r){let a=await n(e,r);return a.ok?i()?.role===`admin`?{ok:!0}:(await t(),{ok:!1,error:`این حساب دسترسی مدیریت ندارد.`}):a}async function o(){await t()}function s(){let t=e(),n=r();return{authenticated:t?.role===`admin`,ready:n}}export{o as n,s as r,a as t};

@@ -1,0 +1,238 @@
+گزارش تغییرات پروژه ShahrazGold
+تاریخ: 2026-08-17
+مسیر پروژه: /var/www/ShahrazGold
+
+============================================================
+1) خلاصه کارهای انجام‌شده
+============================================================
+
+- نصب و راه‌اندازی Laravel با PHP 8.3 و Composer.
+- تنظیم محیط محلی روی SQLite و اجرای migrationها.
+- انتقال خروجی آماده public_html به public لاراول برای اجرای هم‌زمان فرانت و API.
+- اضافه‌شدن public/index.php استاندارد Laravel.
+- حذف دکمه و لینک ثبت‌نام از صفحه /login و لندینگ، در دسکتاپ و موبایل.
+- حذف متن اطلاعات ورود آزمایشی.
+- تغییر فرم ورود ادمین از ایمیل به شماره موبایل و اتصال آن به ورود واقعی Laravel.
+- حذف پیام «نسخه دمو — تمام عملیات به‌صورت شبیه‌سازی و بدون سرور انجام می‌شود.» از پنل ادمین.
+- حذف محدودیت 5 دقیقه‌ای و خطای «قیمت این محصول قدیمی است...» از ثبت درخواست.
+- تغییر متن وضعیت از «قیمت‌ها آنلاین است» به وضعیت مدیر.
+- اضافه‌شدن کلید روشن/خاموش وضعیت مدیر در داشبورد ادمین.
+- ذخیره وضعیت مدیر در دیتابیس و محافظت مسیر تغییر با دسترسی admin.
+- نمایش «مدیر آنلاین است» با رنگ سبز و «مدیر آفلاین است» با رنگ قرمز در داشبورد مشتری.
+- دریافت وضعیت مدیر توسط داشبورد مشتری هر 3 ثانیه.
+- ایجاد یک کاربر admin و یک کاربر customer فعال در SQLite. رمزها عمداً در این گزارش درج نشده‌اند.
+
+نکته مهم فرانت:
+سورس اصلی frontend داخل نسخه فعلی پروژه موجود نیست. فایل‌های فرانت موجود، خروجی build و minify شده‌اند.
+به همین دلیل اصلاحات رابط کاربری مستقیماً روی bundleهای فعال انجام شده‌اند.
+
+============================================================
+2) فایل‌های Laravel ایجاد یا ویرایش‌شده
+============================================================
+
+/var/www/ShahrazGold/shahrazgold-app/.env
+  - APP_ENV=local
+  - APP_DEBUG=true
+  - APP_URL محلی
+  - DB_CONNECTION=sqlite
+  - DB_DATABASE=/var/www/ShahrazGold/shahrazgold-app/database/database.sqlite
+
+/var/www/ShahrazGold/shahrazgold-app/public/index.php
+  - فایل ورودی استاندارد Laravel برای اجرای محلی.
+
+/var/www/ShahrazGold/shahrazgold-app/routes/api.php
+  - GET /api/v1/manager-status
+  - PUT /api/v1/admin/manager-status
+
+/var/www/ShahrazGold/shahrazgold-app/app/Models/AppSetting.php
+  - مدل تنظیمات و نگهداری manager_online.
+
+/var/www/ShahrazGold/shahrazgold-app/app/Http/Controllers/Api/V1/ManagerStatusController.php
+  - خواندن وضعیت مدیر و تغییر آن توسط admin.
+
+/var/www/ShahrazGold/shahrazgold-app/database/migrations/2026_08_17_000001_create_app_settings_table.php
+  - ایجاد جدول app_settings.
+
+/var/www/ShahrazGold/shahrazgold-app/scripts/patch-manager-status-ui.mjs
+  - اسکریپت patch کردن UI وضعیت مدیر روی build فرانت.
+  - این اسکریپت روی bundle فعلی قبلاً اجرا شده است؛ اجرای دوباره روی همین فایل‌های patch‌شده لازم نیست.
+
+/var/www/ShahrazGold/shahrazgold-app/database/database.sqlite
+  - دیتابیس محلی؛ migrationها، کاربران و مقدار manager_online در این فایل نگهداری می‌شوند.
+
+============================================================
+3) فایل‌های build فرانت که مستقیماً ویرایش شدند
+============================================================
+
+نسخه در حال اجرای Laravel:
+
+/var/www/ShahrazGold/shahrazgold-app/public/assets/login-FQp2ca_e.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/routes-CTLNmidU.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/admin-aaZev5Zq.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/admin-D9vUYVaN.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/purchase-request-form-DEN3BIqt.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/purchase-request-form-BdTA5iGl.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/dashboard-C9q9xUMG.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/dashboard-vLFm9dg0.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/admin.index-BiCsvhVi.js
+/var/www/ShahrazGold/shahrazgold-app/public/assets/admin.index-CYCMtDLy.js
+
+نسخه آینه داخل public_html:
+
+/var/www/ShahrazGold/public_html/assets/login-FQp2ca_e.js
+/var/www/ShahrazGold/public_html/assets/routes-CTLNmidU.js
+/var/www/ShahrazGold/public_html/assets/admin-aaZev5Zq.js
+/var/www/ShahrazGold/public_html/assets/admin-D9vUYVaN.js
+/var/www/ShahrazGold/public_html/assets/purchase-request-form-DEN3BIqt.js
+/var/www/ShahrazGold/public_html/assets/purchase-request-form-BdTA5iGl.js
+/var/www/ShahrazGold/public_html/assets/dashboard-C9q9xUMG.js
+/var/www/ShahrazGold/public_html/assets/dashboard-vLFm9dg0.js
+/var/www/ShahrazGold/public_html/assets/admin.index-BiCsvhVi.js
+/var/www/ShahrazGold/public_html/assets/admin.index-CYCMtDLy.js
+
+همچنین محتویات آماده زیر با rsync داخل public لاراول قرار گرفتند:
+
+/var/www/ShahrazGold/public_html/assets/  ->  /var/www/ShahrazGold/shahrazgold-app/public/assets/
+/var/www/ShahrazGold/public_html/storage/ -> /var/www/ShahrazGold/shahrazgold-app/public/storage/
+index.html، favicon.ico، manifest.webmanifest، robots.txt و ShahrazGoldLogo2.png
+
+============================================================
+4) migrationهای اجراشده
+============================================================
+
+Batch 1:
+
+0001_01_01_000000_create_users_table
+0001_01_01_000001_create_cache_table
+0001_01_01_000002_create_jobs_table
+2026_07_25_000001_upgrade_users_and_create_personal_access_tokens
+2026_07_25_000002_create_catalog_and_pricing_tables
+2026_07_25_000003_create_purchase_request_tables
+2026_07_25_000004_create_announcements_and_audit_logs
+2026_08_14_000001_add_price_step_rial_to_products_table
+
+Batch 2:
+
+2026_08_17_000001_create_app_settings_table
+
+دستورهای migration اجراشده:
+
+cd /var/www/ShahrazGold/shahrazgold-app
+php artisan migrate
+php artisan migrate --force
+php artisan migrate:status
+
+دستور لازم روی سرور production پس از انتقال فایل جدید migration:
+
+cd /PATH/TO/shahrazgold-app
+php artisan migrate --force
+php artisan optimize:clear
+
+============================================================
+5) دستورهای مهم اجرا و راه‌اندازی
+============================================================
+
+نصب dependencyهای PHP:
+
+composer install
+
+پاک‌سازی cache لاراول:
+
+php artisan optimize:clear
+
+اجرای محلی Laravel:
+
+php artisan serve --host=127.0.0.1 --port=8090
+php artisan serve --host=127.0.0.1 --port=8091
+php artisan serve --host=127.0.0.1 --port=8092
+
+انتقال خروجی public_html به public لاراول:
+
+mkdir -p public/assets public/storage
+rsync -a ../public_html/assets/ public/assets/
+rsync -a ../public_html/storage/ public/storage/
+rsync -a ../public_html/index.html ../public_html/favicon.ico ../public_html/manifest.webmanifest ../public_html/robots.txt ../public_html/ShahrazGoldLogo2.png public/
+
+اجرای patch رابط وضعیت مدیر:
+
+node scripts/patch-manager-status-ui.mjs
+
+بررسی syntax فایل‌های JavaScript تغییرکرده:
+
+node --check public/assets/login-FQp2ca_e.js
+node --check public/assets/routes-CTLNmidU.js
+node --check public/assets/admin-aaZev5Zq.js
+node --check public/assets/admin-D9vUYVaN.js
+node --check public/assets/purchase-request-form-DEN3BIqt.js
+node --check public/assets/purchase-request-form-BdTA5iGl.js
+node --check public/assets/dashboard-C9q9xUMG.js
+node --check public/assets/dashboard-vLFm9dg0.js
+node --check public/assets/admin.index-BiCsvhVi.js
+node --check public/assets/admin.index-CYCMtDLy.js
+
+بررسی syntax فایل‌های PHP جدید:
+
+php -l app/Models/AppSetting.php
+php -l app/Http/Controllers/Api/V1/ManagerStatusController.php
+php -l database/migrations/2026_08_17_000001_create_app_settings_table.php
+
+بررسی routeهای وضعیت مدیر:
+
+php artisan route:list --path=manager-status
+
+بررسی ساختار دیتابیس و کاربران:
+
+php artisan db:table users
+php artisan migrate:status
+
+============================================================
+6) API جدید وضعیت مدیر
+============================================================
+
+خواندن وضعیت برای فرانت مشتری:
+
+GET /api/v1/manager-status
+
+نمونه پاسخ خاموش:
+
+{"success":true,"message":"OK","data":{"online":false},"meta":{}}
+
+تغییر وضعیت توسط مدیر احراز هویت‌شده:
+
+PUT /api/v1/admin/manager-status
+Content-Type: application/json
+Authorization: Bearer ADMIN_TOKEN
+
+بدنه روشن:
+
+{"online":true}
+
+بدنه خاموش:
+
+{"online":false}
+
+این مسیر بدون توکن admin پاسخ 401 می‌دهد.
+
+============================================================
+7) اطلاعات دیتابیس فعلی
+============================================================
+
+- نوع دیتابیس محلی: SQLite
+- مسیر: /var/www/ShahrazGold/shahrazgold-app/database/database.sqlite
+- تعداد کاربران فعلی هنگام تهیه گزارش: 2
+- نقش‌ها: یک admin فعال و یک customer فعال
+- شماره مشتری آزمایشی: 09123456789
+- رمزهای عبور در این گزارش ذخیره نشده‌اند.
+- مقدار اولیه manager_online بعد از migration: خاموش (false)
+
+============================================================
+8) نکات استقرار
+============================================================
+
+1. قبل از انتقال، از دیتابیس سرور backup تهیه شود.
+2. فایل‌های Laravel بخش 2 و فایل‌های frontend بخش 3 منتقل شوند.
+3. دستور php artisan migrate --force اجرا شود.
+4. دستور php artisan optimize:clear اجرا شود.
+5. دسترسی نوشتن storage و bootstrap/cache بررسی شود.
+6. پس از انتشار، مرورگر با Ctrl+Shift+R تازه‌سازی شود؛ چون نام hash فایل‌های bundle تغییر نکرده است.
+7. اگر سورس اصلی frontend بعداً پیدا شد، همین تغییرات باید داخل source componentها پیاده‌سازی و build جدید تولید شود؛ ویرایش bundle راهکار موقت برای نسخه فعلی است.

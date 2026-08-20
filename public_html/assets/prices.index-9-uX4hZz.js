@@ -1,0 +1,1 @@
+import{s as e}from"./link-BskDqhyN.js";import{t}from"./live-prices-jj8xKYoK.js";import{t as n}from"./app-shell-BUe1S4KS.js";var r=e();function i(){return(0,r.jsx)(n,{children:(0,r.jsx)(t,{})})}export{i as component};

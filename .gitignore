@@ -1,0 +1,6 @@
+.codex/
+.agents/
+/public_html/.idea/
+/public_html/error_log*
+/shahrazgold-app/storage/framework/cache/data/
+/shahrazgold-app/storage/framework/sessions/

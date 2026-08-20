@@ -1,0 +1,16 @@
+{
+  "name": "ShahrazGold",
+  "short_name": "ShahrazGold",
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/ShahrazGoldLogo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

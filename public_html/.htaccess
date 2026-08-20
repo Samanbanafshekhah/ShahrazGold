@@ -1,0 +1,35 @@
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # X-XSRF-Token Header
+    RewriteCond %{HTTP:X-XSRF-Token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # -------------------------------
+    # Laravel API
+    # -------------------------------
+    RewriteCond %{REQUEST_URI} ^/api(?:/|$)
+    RewriteRule ^ index.php [L,QSA]
+
+    # -------------------------------
+    # Existing files and directories
+    # -------------------------------
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # -------------------------------
+    # React SPA fallback
+    # -------------------------------
+    RewriteRule ^ index.html [L]
+</IfModule>
