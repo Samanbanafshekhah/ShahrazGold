@@ -37,6 +37,9 @@ class TradeRequest extends FormRequest
             if (! $product->is_active) {
                 $validator->errors()->add('product_id', 'Product is inactive.');
             }
+            if ($this->user() && $this->string('trade_type')->value() === TradeType::CustomerBuy->value && ! $this->user()->canBuyProduct($product->id)) {
+                $validator->errors()->add('trade_type', 'PRODUCT_ACCESS_DENIED');
+            }
             if ($this->string('trade_type')->value() === TradeType::CustomerBuy->value && ! $product->is_buyable) {
                 $validator->errors()->add('trade_type', 'Product is not buyable.');
             }

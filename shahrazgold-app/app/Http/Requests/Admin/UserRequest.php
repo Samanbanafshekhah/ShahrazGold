@@ -24,7 +24,7 @@ class UserRequest extends FormRequest
             'mobile' => ['required', 'regex:/^09\d{9}$/', Rule::unique('users')->ignore($id)],
             'email' => ['nullable', 'email:rfc', 'max:255', Rule::unique('users')->ignore($id)],
             'password' => [$this->isMethod('post') ? 'required' : 'nullable', 'confirmed', Password::min(8)],
-            'role' => ['required', Rule::enum(UserRole::class)], 'is_active' => ['sometimes', 'boolean'],
+            'role' => ['required', Rule::enum(UserRole::class)], 'role_id' => ['nullable', 'integer', 'exists:roles,id'], 'is_active' => ['sometimes', 'boolean'],
         ];
     }
 }

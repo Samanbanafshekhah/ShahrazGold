@@ -1,0 +1,17 @@
+ {
+    "id": "/admin-app",
+    "name": "مدیریت شهراز گلد",
+    "short_name": "مدیریت شهراز",
+    "start_url": "/admin",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#c9a227",
+    "icons": [
+      {
+        "src": "/ShahrazGoldLogo2.png",
+        "sizes": "1254x1254",
+        "type": "image/png"
+      }
+    ]
+  }

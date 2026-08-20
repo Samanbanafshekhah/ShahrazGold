@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\PasswordRequest;
 use App\Http\Requests\Auth\ProfileRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +20,12 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::create(array_merge($request->safe()->except(['password_confirmation']), ['role' => UserRole::Customer, 'is_active' => true]));
+        $customerRoleId = Role::query()->where('slug', UserRole::Customer->value)->value('id');
+        $user = User::create(array_merge($request->safe()->except(['password_confirmation']), [
+            'role' => UserRole::Customer,
+            'role_id' => $customerRoleId,
+            'is_active' => true,
+        ]));
         $token = $user->createToken($request->input('device_name', 'api'))->plainTextToken;
 
         return $this->success(['user' => (new UserResource($user))->resolve(), 'access_token' => $token, 'token_type' => 'Bearer'], 'Registered.', 201);

@@ -9,6 +9,7 @@ use App\Events\PurchaseRequestApproved;
 use App\Events\PurchaseRequestCreated;
 use App\Events\PurchaseRequestRejected;
 use App\Exceptions\PriceChangedException;
+use App\Models\AppSetting;
 use App\Models\Product;
 use App\Models\ProductPrice;
 use App\Models\PurchaseRequest;
@@ -25,6 +26,8 @@ final class PurchaseRequestService
     {
         return DB::transaction(function () use ($user, $input) {
             User::query()->lockForUpdate()->findOrFail($user->id);
+            $tradeType = TradeType::from($input['trade_type']);
+            abort_unless(AppSetting::managerOnline(), 409, 'MANAGER_OFFLINE');
             $existing = PurchaseRequest::query()->where('user_id', $user->id)->where('client_reference', $input['client_reference'])->first();
             if ($existing) {
                 return $existing;
@@ -34,12 +37,12 @@ final class PurchaseRequestService
             $price = ProductPrice::query()->where('product_id', $product->id)
                 ->orderByDesc('effective_at')->orderByDesc('id')->lockForUpdate()->first();
             abort_if(! $price, 409, 'PRICE_UNAVAILABLE');
-            $tradeType = TradeType::from($input['trade_type']);
             $entryMode = EntryMode::from($input['entry_mode']);
             abort_unless($product->is_active, 409, 'Product is inactive.');
+            abort_if($tradeType === TradeType::CustomerBuy && ! $user->canBuyProduct($product->id), 403, 'PRODUCT_ACCESS_DENIED');
             abort_if($tradeType === TradeType::CustomerBuy && ! $product->is_buyable, 409, 'Product is not buyable.');
             abort_if($tradeType === TradeType::CustomerSell && ! $product->is_sellable, 409, 'Product is not sellable.');
-            $calculation = $this->calculator->calculate($product, $price, $tradeType, $entryMode, $input['quantity'] ?? null, $input['amount_rial'] ?? null);
+            $calculation = $this->calculator->calculate($product, $price, $tradeType, $entryMode, $input['quantity'] ?? null, $input['amount_rial'] ?? null, $user);
 
             if ((int) $input['expected_product_price_id'] !== $price->id) {
                 throw new PriceChangedException($this->previewPayload($product, $tradeType, $entryMode, $calculation));
@@ -57,6 +60,7 @@ final class PurchaseRequestService
                 'trade_adjustment_enabled' => $product->trade_adjustment_enabled,
                 'trade_adjustment_percent' => $calculation['adjustment_percent'],
                 'adjustment_amount_per_unit_rial' => $calculation['adjustment_amount_rial'],
+                'role_price_adjustment_rial' => $calculation['role_price_adjustment_rial'],
                 'final_unit_price_rial' => $calculation['final_unit_price_rial'],
                 'total_amount_rial' => $calculation['total_amount_rial'],
                 'product_name' => $product->name, 'product_symbol' => $product->symbol, 'product_unit' => $product->unit->value,

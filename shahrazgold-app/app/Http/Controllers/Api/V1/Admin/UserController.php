@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserRequest;
 use App\Http\Requests\Admin\UserStatusRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
@@ -30,10 +31,11 @@ class UserController extends Controller
 
     public function store(UserRequest $request, AuditService $audit): JsonResponse
     {
-        $user = User::create($request->safe()->except(['password_confirmation']));
+        $data = $this->normalizeRole($request->safe()->except(['password_confirmation']));
+        $user = User::create($data);
         $audit->record('user.created', $user, null, $user->toArray());
 
-        return $this->success((new UserResource($user))->resolve(), 'User created.', 201);
+        return $this->success((new UserResource($user->load('accessRole')))->resolve(), 'User created.', 201);
     }
 
     public function show(User $user): JsonResponse
@@ -47,7 +49,7 @@ class UserController extends Controller
             $activeAdmins = $this->lockActiveAdmins();
             $locked = User::query()->lockForUpdate()->findOrFail($user->id);
             $old = $locked->toArray();
-            $data = $request->safe()->except(['password_confirmation']);
+            $data = $this->normalizeRole($request->safe()->except(['password_confirmation']));
             if (empty($data['password'])) {
                 unset($data['password']);
             }
@@ -65,7 +67,7 @@ class UserController extends Controller
                 $locked->tokens()->delete();
             } $audit->record('user.updated', $locked, $old, $locked->fresh()->toArray());
 
-            return $this->success((new UserResource($locked->fresh()))->resolve(), 'User updated.');
+            return $this->success((new UserResource($locked->fresh()->load('accessRole')))->resolve(), 'User updated.');
         }, 3);
     }
 
@@ -105,6 +107,18 @@ class UserController extends Controller
 
             return $this->success(null, 'User deleted.');
         }, 3);
+    }
+
+    private function normalizeRole(array $data): array
+    {
+        if (! empty($data['role_id'])) {
+            $role = Role::findOrFail($data['role_id']);
+            $data['role'] = $role->slug === 'admin' ? UserRole::Admin->value : UserRole::Customer->value;
+        } elseif (! empty($data['role'])) {
+            $data['role_id'] = Role::where('slug', $data['role'])->value('id');
+        }
+
+        return $data;
     }
 
     private function lockActiveAdmins()

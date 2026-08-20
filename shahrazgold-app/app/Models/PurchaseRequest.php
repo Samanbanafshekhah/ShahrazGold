@@ -29,6 +29,7 @@ class PurchaseRequest extends Model
             'requested_amount_rial' => 'string',
             'raw_unit_price_rial' => 'string',
             'adjustment_amount_per_unit_rial' => 'string',
+            'role_price_adjustment_rial' => 'string',
             'final_unit_price_rial' => 'string',
             'total_amount_rial' => 'string',
             'price_effective_at' => 'immutable_datetime',

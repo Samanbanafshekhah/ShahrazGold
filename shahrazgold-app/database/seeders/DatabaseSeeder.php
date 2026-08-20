@@ -9,10 +9,12 @@ use App\Enums\ProductUnit;
 use App\Enums\PurchaseRequestStatus;
 use App\Enums\TradeType;
 use App\Enums\UserRole;
+use App\Models\AppSetting;
 use App\Models\MarketAnnouncement;
 use App\Models\MarketPriceSource;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Pricing\ProductPricingService;
 use App\Services\PurchaseRequestService;
@@ -41,6 +43,21 @@ class DatabaseSeeder extends Seeder
             ['سکه گرمی', 'gram-coin', 'GRAMCOIN', 'coin', ProductUnit::Count, PricingMode::Manual, null, null, false, '0'],
         ];
         $products = collect($specs)->map(fn ($s, $i) => Product::firstOrCreate(['symbol' => $s[2]], ['name' => $s[0], 'slug' => $s[1], 'product_category_id' => $categories[$s[3]]->id, 'unit' => $s[4], 'pricing_mode' => $s[5], 'price_source_id' => $s[6], 'pricing_formula_key' => $s[7], 'is_active' => true, 'is_buyable' => true, 'is_sellable' => true, 'display_order' => $i, 'trade_adjustment_enabled' => $s[8], 'trade_adjustment_percent' => $s[9]]));
+
+        $adminRole = Role::query()->where('slug', UserRole::Admin->value)->firstOrFail();
+        $customerRole = Role::query()->where('slug', UserRole::Customer->value)->firstOrFail();
+        $admin->forceFill(['role_id' => $adminRole->id])->save();
+        $customer->forceFill(['role_id' => $customerRole->id])->save();
+
+        $productPermissions = $products->mapWithKeys(fn (Product $product) => [
+            $product->id => [
+                'can_access' => true,
+                'can_buy' => (bool) $product->is_buyable,
+            ],
+        ])->all();
+        $adminRole->products()->sync($productPermissions);
+        $customerRole->products()->sync($productPermissions);
+        AppSetting::setManagerOnline(true);
 
         $pricing = app(ProductPricingService::class);
         if ($source->quotes()->count() < 2) {
