@@ -32,9 +32,6 @@ export function PublicHeader() {
           <Button asChild variant="ghost" size="sm">
             <Link to="/login">ورود</Link>
           </Button>
-          <Button asChild size="sm" className="bg-gold text-primary-foreground hover:opacity-90">
-            <Link to="/register">ثبت‌نام</Link>
-          </Button>
         </div>
         <button
           type="button"
@@ -58,15 +55,10 @@ export function PublicHeader() {
                 {n.label}
               </a>
             ))}
-            <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="mt-2 grid grid-cols-1 gap-2">
               <Button asChild variant="outline">
                 <Link to="/login" onClick={() => setOpen(false)}>
                   ورود
-                </Link>
-              </Button>
-              <Button asChild className="bg-gold text-primary-foreground hover:opacity-90">
-                <Link to="/register" onClick={() => setOpen(false)}>
-                  ثبت‌نام
                 </Link>
               </Button>
             </div>

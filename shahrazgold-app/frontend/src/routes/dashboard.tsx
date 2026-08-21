@@ -105,13 +105,18 @@ function DashboardPage() {
                 />
 
                 <div className="mt-5 sm:mt-6">
-                    <MarketPriceBoard
-                        assets={assets}
-                        onTrade={(asset, action, trigger) => {
-                            purchaseTriggerRef.current = trigger;
-                            setSelectedTrade({ asset, action });
-                        }}
-                    />
+                    <p className="px-3 text-xs font-bold text-muted-foreground sm:px-0">
+                        قیمت‌ها به تومان است
+                    </p>
+                    <div className="mt-2">
+                        <MarketPriceBoard
+                            assets={assets}
+                            onTrade={(asset, action, trigger) => {
+                                purchaseTriggerRef.current = trigger;
+                                setSelectedTrade({ asset, action });
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 

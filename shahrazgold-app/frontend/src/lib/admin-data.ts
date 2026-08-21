@@ -12,6 +12,7 @@ export interface AdminPriceItem {
     price: number;
     previousPrice: number;
     priceStep: number;
+    sellPriceDifferenceToman: number;
     updatedAt: string;
     recentlyUpdated?: boolean;
     symbol?: string;
@@ -69,6 +70,7 @@ interface ApiProduct {
     price_source_id?: number | null;
     pricing_formula_key?: string | null;
     price_step_rial?: string;
+    sell_price_difference_rial?: string;
     category: { id: number; title: string; slug: string } | null;
     current_price: { raw_price_rial: string; effective_at: string } | null;
 }
@@ -152,6 +154,7 @@ function mapProduct(product: ApiProduct): AdminPriceItem {
         price,
         previousPrice: price,
         priceStep: Number(product.price_step_rial ?? 10_000) / 10,
+        sellPriceDifferenceToman: Number(product.sell_price_difference_rial ?? 0) / 10,
         updatedAt: product.current_price?.effective_at ?? new Date(0).toISOString(),
         symbol: product.symbol,
         slug: product.slug,
@@ -300,7 +303,7 @@ export interface AdminProductInput {
     unit: string;
     categoryId: string;
     price: number;
-    priceDifferencePercent?: number;
+    sellPriceDifferenceToman: number;
 }
 
 export type AdminProductMutationResult =
@@ -317,8 +320,11 @@ function productPayload(input: AdminProductInput, current?: AdminPriceItem) {
         is_active: true,
         is_buyable: true,
         is_sellable: true,
-        trade_adjustment_enabled: input.priceDifferencePercent !== undefined,
-        trade_adjustment_percent: String(Math.max(0, input.priceDifferencePercent ?? 0)),
+        trade_adjustment_enabled: input.sellPriceDifferenceToman > 0,
+        trade_adjustment_percent: "0",
+        sell_price_difference_rial: Math.round(
+            Math.max(0, input.sellPriceDifferenceToman) * 10,
+        ),
     };
     if (pricingMode === "derived") {
         payload.price_source_id = current?.priceSourceId;

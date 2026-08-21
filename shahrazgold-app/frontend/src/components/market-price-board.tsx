@@ -154,7 +154,7 @@ function PriceRow({
                         {asset.title}
                     </h3>
                     <p className="mt-0.5 text-[9.5px] text-muted-foreground sm:text-[10px]">
-                        هر {asset.unit} · {asset.currency === "IRR" ? "تومان" : "دلار"}
+                        هر {asset.unit}
                     </p>
                 </div>
 
@@ -201,7 +201,7 @@ function PriceCell({
         value === undefined
             ? "—"
             : currency === "IRR"
-              ? formatToman(value)
+              ? formatToman(value).replace(" تومان", "")
               : formatMoney(value, currency);
     return (
         <button
@@ -225,7 +225,7 @@ function PriceCell({
             <span className="sr-only">{label}</span>
             <strong
                 className={
-                    "block whitespace-nowrap text-[12.5px] font-extrabold tabular-nums sm:text-sm lg:text-base " +
+                    "block whitespace-nowrap text-sm font-extrabold tabular-nums sm:text-base lg:text-lg " +
                     (value === undefined
                         ? "text-muted-foreground"
                         : tone === "buy"

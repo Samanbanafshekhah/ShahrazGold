@@ -64,7 +64,7 @@ type ProductForm = {
     unit: string;
     categoryId: string;
     price: string;
-    priceDifferencePercent: string;
+    sellPriceDifferenceToman: string;
 };
 
 type ProductFormErrors = Partial<Record<keyof ProductForm, string>>;
@@ -76,7 +76,7 @@ const EMPTY_PRODUCT_FORM: ProductForm = {
     unit: "گرم",
     categoryId: "",
     price: "",
-    priceDifferencePercent: "",
+    sellPriceDifferenceToman: "",
 };
 
 function parsePersianNumber(raw: string): number {
@@ -87,19 +87,8 @@ function parsePersianNumber(raw: string): number {
     return Number(normalized);
 }
 
-function parsePercent(raw: string): number {
-    const normalized = raw
-        .trim()
-        .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
-        .replace(/[٫،,]/g, ".")
-        .replace(/\s/g, "");
-    return Number(normalized);
-}
-
-function currentDifferencePercent(item: AdminPriceItem): string {
-    if (!item.previousPrice) return "";
-    const difference = ((item.price - item.previousPrice) / item.previousPrice) * 100;
-    return Math.abs(difference) < 0.005 ? "" : difference.toFixed(2);
+function currentSellPriceDifference(item: AdminPriceItem): string {
+    return item.sellPriceDifferenceToman ? String(item.sellPriceDifferenceToman) : "";
 }
 
 function PricesPage() {
@@ -156,7 +145,7 @@ function PricesPage() {
             unit: item.unit,
             categoryId: item.categoryId ?? "",
             price: String(item.price),
-            priceDifferencePercent: currentDifferencePercent(item),
+            sellPriceDifferenceToman: currentSellPriceDifference(item),
         });
         setProductErrors({});
         setProductDialogOpen(true);
@@ -174,10 +163,10 @@ function PricesPage() {
         const title = productForm.title.trim();
         const unit = productForm.unit.trim();
         const price = parsePersianNumber(productForm.price);
-        const hasDifference = productForm.priceDifferencePercent.trim() !== "";
-        const priceDifferencePercent = hasDifference
-            ? parsePercent(productForm.priceDifferencePercent)
-            : undefined;
+        const sellPriceDifferenceToman =
+            productForm.sellPriceDifferenceToman.trim() === ""
+                ? 0
+                : parsePersianNumber(productForm.sellPriceDifferenceToman);
 
         if (title.length < 2) errors.title = "نام محصول باید حداقل ۲ کاراکتر باشد.";
         if (!unit) errors.unit = "واحد محصول را وارد کنید.";
@@ -191,10 +180,12 @@ function PricesPage() {
             errors.price = "قیمت باید عددی و بزرگ‌تر از صفر باشد.";
         }
         if (
-            priceDifferencePercent !== undefined &&
-            (!Number.isFinite(priceDifferencePercent) || priceDifferencePercent <= -100)
+            !Number.isFinite(sellPriceDifferenceToman) ||
+            sellPriceDifferenceToman < 0 ||
+            sellPriceDifferenceToman >= price
         ) {
-            errors.priceDifferencePercent = "درصد باید عددی و بزرگ‌تر از ۱۰۰- باشد.";
+            errors.sellPriceDifferenceToman =
+                "اختلاف باید عددی نامنفی و کمتر از قیمت خرید باشد.";
         }
 
         setProductErrors(errors);
@@ -205,7 +196,7 @@ function PricesPage() {
             unit,
             categoryId: productForm.categoryId,
             price,
-            priceDifferencePercent,
+            sellPriceDifferenceToman,
         };
         const result = editingProduct
             ? await updateAdminProduct(editingProduct.id, input)
@@ -277,7 +268,8 @@ function PricesPage() {
         >
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
-                    مقدار تغییر دکمه‌های مثبت و منفی برای هر محصول جداگانه قابل تنظیم است.
+                    قیمت سبز یک گام افزایش و قیمت قرمز یک گام کاهش را ثبت می‌کند؛ مقدار گام هر
+                    محصول جداگانه قابل تنظیم است.
                 </p>
                 <div className="flex w-full flex-wrap gap-2 sm:w-auto">
                     <Button size="sm" onClick={openCreateProduct} className="flex-1 sm:flex-none">
@@ -471,32 +463,33 @@ function PricesPage() {
 
                             <div>
                                 <Label htmlFor="product-difference">
-                                    درصد اختلاف قیمت{" "}
+                                    اختلاف قیمت خرید و فروش (تومان){" "}
                                     <span className="font-normal text-muted-foreground">
                                         (اختیاری)
                                     </span>
                                 </Label>
                                 <Input
                                     id="product-difference"
-                                    inputMode="decimal"
+                                    inputMode="numeric"
                                     dir="ltr"
-                                    value={productForm.priceDifferencePercent}
+                                    value={productForm.sellPriceDifferenceToman}
                                     onChange={(event) =>
                                         setProductForm((current) => ({
                                             ...current,
-                                            priceDifferencePercent: event.target.value,
+                                            sellPriceDifferenceToman: event.target.value,
                                         }))
                                     }
-                                    placeholder="مثلاً 2.5 یا -1.2"
+                                    placeholder="مثلاً 50000"
                                     className="mt-1.5 h-11 text-left"
-                                    aria-invalid={Boolean(productErrors.priceDifferencePercent)}
+                                    aria-invalid={Boolean(productErrors.sellPriceDifferenceToman)}
                                 />
                                 <p className="mt-1.5 text-[11px] text-muted-foreground">
-                                    مقدار مثبت برای افزایش و مقدار منفی برای کاهش قیمت است.
+                                    این مبلغ از قیمت خرید کم می‌شود تا قیمت فروش به مشتری محاسبه
+                                    شود.
                                 </p>
-                                {productErrors.priceDifferencePercent && (
+                                {productErrors.sellPriceDifferenceToman && (
                                     <p className="mt-1.5 text-xs text-negative">
-                                        {productErrors.priceDifferencePercent}
+                                        {productErrors.sellPriceDifferenceToman}
                                     </p>
                                 )}
                             </div>
@@ -656,29 +649,29 @@ function AdminPriceSection({
 }) {
     return (
         <section className="overflow-hidden border-y border-border bg-card sm:rounded-2xl sm:border sm:shadow-elegant">
-            <header className="grid grid-cols-[minmax(0,1fr)_minmax(100px,1.15fr)_76px] items-end gap-2 border-b border-border bg-muted/35 px-3 py-3 sm:px-5 sm:py-4 xl:flex xl:items-center xl:justify-between xl:gap-3">
+            <header className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.15fr)] items-end gap-1.5 border-b border-border bg-muted/35 px-3 py-3 sm:px-5 sm:py-4 xl:flex xl:items-center xl:justify-between xl:gap-3">
                 <div className="min-w-0">
                     <h2 className="text-sm font-extrabold sm:text-base">{title}</h2>
-                    <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground sm:text-xs">
+                    <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
                         {description}
                     </p>
                 </div>
-                <span className="text-center text-[11px] font-bold text-muted-foreground xl:hidden">
-                    قیمت فعلی
+                <span className="text-center text-[10px] font-bold text-muted-foreground xl:hidden">
+                    افزایش
                 </span>
-                <span className="text-center text-[11px] font-bold text-muted-foreground xl:hidden">
-                    تغییر
+                <span className="text-center text-[10px] font-bold text-muted-foreground xl:hidden">
+                    کاهش
                 </span>
                 <span className="hidden shrink-0 rounded-full bg-gold-soft px-2.5 py-1 text-[10px] font-bold text-[color:var(--gold-dark)] sm:text-[11px] xl:inline-flex">
                     {toPersianDigits(items.length)} محصول
                 </span>
             </header>
 
-            <div className="hidden grid-cols-[minmax(150px,1.35fr)_minmax(135px,1fr)_90px_minmax(190px,1.2fr)_120px] items-center gap-3 border-b border-border px-5 py-2.5 text-xs text-muted-foreground xl:grid">
+            <div className="admin-price-header-grid hidden grid-cols-[minmax(170px,1.4fr)_minmax(150px,1fr)_minmax(150px,1fr)_90px_120px] gap-3 border-b border-border px-5 py-2.5 text-[11px] text-muted-foreground xl:grid">
                 <span>محصول</span>
-                <span>قیمت فعلی</span>
+                <span>افزایش</span>
+                <span>کاهش</span>
                 <span>تغییر</span>
-                <span>تنظیم قیمت</span>
                 <span>عملیات</span>
             </div>
 
@@ -718,41 +711,54 @@ function AdminPriceRow({
     const decreaseDisabled = item.price <= item.priceStep;
 
     return (
-        <article className="bg-card transition-colors">
-            <div className="hidden grid-cols-[minmax(150px,1.35fr)_minmax(135px,1fr)_90px_minmax(190px,1.2fr)_120px] items-center gap-3 px-5 py-4 xl:grid">
-                <div className="min-w-0">
-                    <h3 className="truncate text-base font-bold">{item.title}</h3>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        هر {item.unit} · تومان
+        <article className="px-3 py-3 transition-colors hover:bg-muted/25 sm:px-5 sm:py-4">
+            <div className="admin-price-row-grid grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.15fr)] items-center gap-1.5 xl:grid-cols-[minmax(170px,1.4fr)_minmax(150px,1fr)_minmax(150px,1fr)_90px_120px] xl:gap-3">
+                <div className="group min-w-0">
+                    <h3 className="truncate text-[12.5px] font-bold transition-colors group-hover:text-[color:var(--gold-dark)] sm:text-sm">
+                        {item.title}
+                    </h3>
+                    <p className="mt-0.5 text-[9.5px] text-muted-foreground sm:text-[10px]">
+                        هر {item.unit} · گام {formatNumber(item.priceStep)}
                     </p>
                 </div>
-
-                <div className="min-w-0">
-                    <strong className="block whitespace-nowrap text-xl font-extrabold tabular-nums">
-                        {formatNumber(item.price)}
-                    </strong>
-                </div>
-
-                <PriceDifference meta={meta} />
-
-                <PriceStepper
-                    item={item}
-                    decreaseDisabled={decreaseDisabled}
-                    onIncrease={onIncrease}
-                    onDecrease={onDecrease}
+                <PriceActionButton
+                    tone="increase"
+                    label={`افزایش قیمت ${item.title} به ${formatNumber(item.price + item.priceStep)} تومان`}
+                    value={item.price + item.priceStep}
+                    onClick={() => onIncrease(item)}
                 />
-
-                <div className="flex items-center gap-1">
+                <PriceActionButton
+                    tone="decrease"
+                    label={`کاهش قیمت ${item.title} به ${formatNumber(Math.max(0, item.price - item.priceStep))} تومان`}
+                    value={Math.max(0, item.price - item.priceStep)}
+                    disabled={decreaseDisabled}
+                    onClick={() => onDecrease(item)}
+                />
+                <div className="hidden xl:block">
+                    <PriceDifference meta={meta} />
+                </div>
+                <div className="hidden items-center gap-1 xl:flex">
                     <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         onClick={() => onPriceStepSetting(item)}
-                        className="text-[color:var(--gold-dark)] hover:bg-gold-soft hover:text-[color:var(--gold-dark)]"
+                        className="h-8 w-full min-w-0 px-0 text-[color:var(--gold-dark)] hover:bg-gold-soft hover:text-[color:var(--gold-dark)]"
                         aria-label={`تنظیم گام قیمت ${item.title}`}
                         title="تنظیم گام قیمت"
                     >
                         <ListPlus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(item)}
+                        className="h-8 w-full min-w-0 px-0 text-[9px]"
+                        aria-label={`تنظیم اختلاف خرید و فروش ${item.title}`}
+                        title="تنظیم اختلاف خرید و فروش"
+                    >
+                        اختلاف
                     </Button>
                     <Button
                         type="button"
@@ -775,149 +781,95 @@ function AdminPriceRow({
                     </Button>
                 </div>
             </div>
-
-            <div className="xl:hidden">
-                <div className="grid grid-cols-[minmax(0,1fr)_minmax(100px,1.15fr)_76px] items-center gap-2 px-3 py-3.5 sm:px-5">
-                    <div className="min-w-0">
-                        <h3 className="truncate text-sm font-bold sm:text-base">{item.title}</h3>
-                        <p className="mt-0.5 text-[10.5px] text-muted-foreground sm:text-[11px]">
-                            هر {item.unit} · تومان
-                        </p>
-                    </div>
-
-                    <div className="min-w-0 text-center">
-                        <strong className="block whitespace-nowrap text-base font-extrabold tabular-nums sm:text-xl">
-                            {formatNumber(item.price)}
-                        </strong>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-1">
-                        <PriceStepButton
-                            tone="increase"
-                            label={`افزایش ${formatNumber(item.priceStep)} تومانی قیمت ${item.title}`}
-                            compact
-                            onClick={() => onIncrease(item)}
-                        />
-                        <PriceStepButton
-                            tone="decrease"
-                            label={`کاهش ${formatNumber(item.priceStep)} تومانی قیمت ${item.title}`}
-                            compact
-                            disabled={decreaseDisabled}
-                            onClick={() => onDecrease(item)}
-                        />
-                    </div>
+            <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/50 pt-2 xl:hidden">
+                <div className="flex min-w-0 items-center gap-2">
+                    <PriceDifference meta={meta} compact />
+                    <span className="truncate text-[10px] text-muted-foreground">
+                        {formatPersianTime(item.updatedAt)}
+                    </span>
                 </div>
-
-                <div className="flex items-center justify-between gap-2 border-t border-border/50 px-3 py-1.5 sm:px-5">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <PriceDifference meta={meta} compact />
-                        <span className="truncate text-[10px] text-muted-foreground">
-                            {formatPersianTime(item.updatedAt)}
-                        </span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-0.5">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onPriceStepSetting(item)}
-                            className="h-8 w-8 text-[color:var(--gold-dark)] hover:bg-gold-soft hover:text-[color:var(--gold-dark)]"
-                            aria-label={`تنظیم گام قیمت ${item.title}`}
-                            title="تنظیم گام قیمت"
-                        >
-                            <ListPlus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onEdit(item)}
-                            className="h-8 w-8 text-muted-foreground"
-                            aria-label={`ویرایش ${item.title}`}
-                        >
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onDelete(item)}
-                            className="h-8 w-8 text-muted-foreground hover:bg-negative-soft hover:text-negative"
-                            aria-label={`حذف ${item.title}`}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
+                <div className="flex shrink-0 items-center gap-0.5">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onPriceStepSetting(item)}
+                        className="h-8 w-8 text-[color:var(--gold-dark)] hover:bg-gold-soft hover:text-[color:var(--gold-dark)]"
+                        aria-label={`تنظیم گام قیمت ${item.title}`}
+                    >
+                        <ListPlus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onEdit(item)}
+                        className="h-8 px-1.5 text-[9px]"
+                        aria-label={`تنظیم اختلاف خرید و فروش ${item.title}`}
+                    >
+                        اختلاف
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(item)}
+                        className="h-8 w-8 text-muted-foreground"
+                        aria-label={`ویرایش ${item.title}`}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(item)}
+                        className="h-8 w-8 text-muted-foreground hover:bg-negative-soft hover:text-negative"
+                        aria-label={`حذف ${item.title}`}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
         </article>
     );
 }
 
-function PriceStepper({
-    item,
-    decreaseDisabled,
-    onIncrease,
-    onDecrease,
-}: {
-    item: AdminPriceItem;
-    decreaseDisabled: boolean;
-    onIncrease: (item: AdminPriceItem) => void;
-    onDecrease: (item: AdminPriceItem) => void;
-}) {
-    return (
-        <div className="flex items-center justify-between gap-2">
-            <PriceStepButton
-                tone="increase"
-                label={`افزایش ${formatNumber(item.priceStep)} تومانی قیمت ${item.title}`}
-                onClick={() => onIncrease(item)}
-            />
-            <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">
-                ± {formatNumber(item.priceStep)}
-            </span>
-            <PriceStepButton
-                tone="decrease"
-                label={`کاهش ${formatNumber(item.priceStep)} تومانی قیمت ${item.title}`}
-                disabled={decreaseDisabled}
-                onClick={() => onDecrease(item)}
-            />
-        </div>
-    );
-}
-
-function PriceStepButton({
+function PriceActionButton({
     tone,
     label,
+    value,
     disabled,
-    compact = false,
     onClick,
 }: {
     tone: "increase" | "decrease";
     label: string;
+    value: number;
     disabled?: boolean;
-    compact?: boolean;
     onClick: () => void;
 }) {
-    const Icon = tone === "increase" ? Plus : Minus;
+    const increase = tone === "increase";
     return (
-        <Button
+        <button
             type="button"
-            variant="ghost"
-            size="icon"
             disabled={disabled}
             onClick={onClick}
-            className={
-                (compact ? "h-9 w-9 rounded-lg " : "h-10 w-10 rounded-xl ") +
-                "shrink-0 " +
-                (tone === "increase"
-                    ? "bg-positive-soft text-positive hover:bg-positive-soft hover:text-positive"
-                    : "bg-negative-soft text-negative hover:bg-negative-soft hover:text-negative")
-            }
             aria-label={label}
             title={label}
+            className={
+                "min-w-0 rounded-lg px-1 py-2 text-center transition-colors enabled:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed sm:px-2 xl:text-start " +
+                (increase ? "bg-positive-soft" : "bg-negative-soft disabled:bg-muted/55")
+            }
         >
-            <Icon className="h-5 w-5" strokeWidth={2.5} />
-        </Button>
+            <span className="sr-only">{increase ? "افزایش" : "کاهش"}</span>
+            <strong
+                className={
+                    "block whitespace-nowrap text-sm font-black tracking-tight tabular-nums sm:text-base lg:text-lg " +
+                    (increase ? "text-positive" : "text-negative")
+                }
+            >
+                {formatNumber(value)}
+            </strong>
+        </button>
     );
 }
 

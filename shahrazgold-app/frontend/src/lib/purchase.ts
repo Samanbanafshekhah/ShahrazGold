@@ -24,8 +24,6 @@ export interface PurchaseCalculation {
     valid: boolean;
 }
 
-export const PURCHASE_PRICE_MAX_AGE_MS = 5 * 60 * 1000;
-
 export function purchaseProductFromAsset(
     asset: GoldAsset,
     action: TradeAction = "buy",
@@ -49,7 +47,6 @@ export function purchaseProductFromAsset(
 export function getPurchaseAvailabilityError(
     product: PurchaseProduct,
     action: TradeAction = "buy",
-    now = Date.now(),
 ): string | undefined {
     if (
         product.available === false ||
@@ -61,9 +58,6 @@ export function getPurchaseAvailabilityError(
 
     const updatedAt = new Date(product.updatedAt).getTime();
     if (!Number.isFinite(updatedAt)) return "زمان به‌روزرسانی قیمت این محصول مشخص نیست.";
-    if (now - updatedAt > PURCHASE_PRICE_MAX_AGE_MS) {
-        return "قیمت این محصول قدیمی است. لطفاً ابتدا قیمت‌ها را به‌روزرسانی کنید.";
-    }
     return undefined;
 }
 

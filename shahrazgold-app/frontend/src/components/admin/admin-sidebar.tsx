@@ -81,9 +81,6 @@ export function AdminSidebar({
                     );
                 })}
             </nav>
-            <div className="rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
-                نسخه دمو — تمام عملیات به‌صورت شبیه‌سازی و بدون سرور انجام می‌شود.
-            </div>
         </div>
     );
 
