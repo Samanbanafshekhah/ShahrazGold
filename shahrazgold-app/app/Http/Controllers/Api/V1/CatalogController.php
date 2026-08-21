@@ -20,7 +20,15 @@ class CatalogController extends Controller
     public function products(Request $request): JsonResponse
     {
         $this->resolveOptionalUser($request);
-        $q = Product::with(['category', 'currentPrice'])->where('is_active', true)->whereHas('category', fn ($x) => $x->where('is_active', true))->when($request->filled('category'), fn ($x) => $x->whereHas('category', fn ($c) => $c->where('slug', $request->category)))->when($request->filled('search'), fn ($x) => $x->where(fn ($s) => $s->whereLike('name', '%'.$request->search.'%')->orWhereLike('symbol', '%'.$request->search.'%')))->orderBy('display_order')->orderBy('id');
+        $q = $this->visibleProducts($request);
+        if ($request->filled('category')) {
+            $q->whereHas('category', fn ($category) => $category->where('slug', $request->category));
+        }
+        if ($request->filled('search')) {
+            $term = '%'.$request->search.'%';
+            $q->where(fn ($search) => $search->whereLike('name', $term)->orWhereLike('symbol', $term));
+        }
+        $q->orderBy('display_order')->orderBy('id');
         $p = $q->paginate(min($request->integer('per_page', 20), 100));
 
         return $this->paginated($p, fn ($x) => (new ProductResource($x))->resolve($request));
@@ -29,7 +37,7 @@ class CatalogController extends Controller
     public function product(Request $request, Product $product): JsonResponse
     {
         $this->resolveOptionalUser($request);
-        abort_unless($product->is_active && $product->category()->where('is_active', true)->exists(), 404);
+        abort_unless($product->is_active && $product->category()->where('is_active', true)->exists() && (! $request->user() || $request->user()->canAccessProduct($product->id)), 404);
 
         return $this->success((new ProductResource($product->load(['category', 'currentPrice'])))->resolve($request));
     }
@@ -37,7 +45,7 @@ class CatalogController extends Controller
     public function prices(Request $request): JsonResponse
     {
         $this->resolveOptionalUser($request);
-        $products = Product::with(['category', 'currentPrice'])->where('is_active', true)->whereHas('category', fn ($x) => $x->where('is_active', true))->orderBy('display_order')->get();
+        $products = $this->visibleProducts($request)->orderBy('display_order')->get();
 
         return $this->success($products->map(function ($product) use ($request) {
             $resource = (new ProductResource($product))->resolve($request);
@@ -56,4 +64,16 @@ class CatalogController extends Controller
         $user->loadMissing('accessRole.products');
         $request->setUserResolver(fn () => $user);
     }
+    private function visibleProducts(Request $request)
+    {
+        $query = Product::with(['category', 'currentPrice'])->where('is_active', true)->whereHas('category', fn ($x) => $x->where('is_active', true));
+        $user = $request->user();
+
+        if ($user && ! $user->isAdmin()) {
+            $query->whereHas('roles', fn ($roles) => $roles->whereKey($user->role_id)->where('roles.is_active', true)->where('role_product_permissions.can_access', true));
+        }
+
+        return $query;
+    }
+
 }

@@ -18,7 +18,7 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $q = User::query();
+        $q = User::query()->with('accessRole');
         $q->when($request->filled('search'), fn ($x) => $x->where(function ($s) use ($request) {
             $term = '%'.$request->search.'%';
             $s->whereLike('first_name', $term)->orWhereLike('last_name', $term)->orWhereLike('mobile', $term)->orWhereLike('email', $term);

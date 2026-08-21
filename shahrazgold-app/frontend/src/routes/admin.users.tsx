@@ -47,6 +47,13 @@ export const Route = createFileRoute("/admin/users")({
 
 type UserRole = "admin" | "customer";
 
+type ApiRole = { id?: number; name: string; slug: string; is_active: boolean };
+
+const DEFAULT_ROLES: ApiRole[] = [
+    { name: "مشتری", slug: "customer", is_active: true },
+    { name: "مدیر", slug: "admin", is_active: true },
+];
+
 type AdminUser = {
     id: string;
     firstName: string;
@@ -80,7 +87,7 @@ type UserForm = {
     email: string;
     password: string;
     passwordConfirmation: string;
-    role: UserRole;
+    role: string;
     active: boolean;
 };
 
@@ -129,6 +136,7 @@ function fullName(user: AdminUser): string {
 function UsersPage() {
     const onlineUsers = useAdminOnlineUsers();
     const [users, setUsers] = useState<AdminUser[]>([]);
+    const [roles, setRoles] = useState<ApiRole[]>(DEFAULT_ROLES);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
     const [search, setSearch] = useState("");
@@ -154,6 +162,7 @@ function UsersPage() {
 
     useEffect(() => {
         void loadUsers();
+        void apiRequest<ApiRole[]>("admin/roles").then((response) => setRoles(response.data.filter((role) => role.is_active))).catch(() => undefined);
     }, [loadUsers]);
 
     const filteredUsers = useMemo(() => {
@@ -217,7 +226,8 @@ function UsersPage() {
                     email: form.email.trim() || null,
                     password: form.password,
                     password_confirmation: form.passwordConfirmation,
-                    role: form.role,
+                    role: roles.find((role) => role.slug === form.role)?.slug === 'admin' ? 'admin' : 'customer',
+                    role_id: roles.find((role) => role.slug === form.role)?.id,
                     is_active: form.active,
                 }),
             });
@@ -238,6 +248,7 @@ function UsersPage() {
                     email: "email",
                     password: "password",
                     role: "role",
+                    role_id: "role",
                     is_active: "active",
                 };
                 for (const [field, messages] of Object.entries(error.errors)) {
@@ -494,7 +505,7 @@ function UsersPage() {
                                     onValueChange={(role) =>
                                         setForm((current) => ({
                                             ...current,
-                                            role: role as UserRole,
+                                            role,
                                         }))
                                     }
                                 >
@@ -502,8 +513,9 @@ function UsersPage() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent dir="rtl">
-                                        <SelectItem value="customer">مشتری</SelectItem>
-                                        <SelectItem value="admin">مدیر</SelectItem>
+                                        {roles.map((role) => (
+                                            <SelectItem key={role.slug} value={role.slug}>{role.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </FormField>

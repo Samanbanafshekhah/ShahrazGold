@@ -72,7 +72,7 @@ export async function apiRequest<T>(
             ? Object.values(payload.errors).flat().find(Boolean)
             : undefined;
         throw new ApiError(
-            validationMessage ??
+            translateApiMessage(validationMessage) ??
                 translateApiMessage(payload.message) ??
                 "درخواست با خطا روبه‌رو شد.",
             response.status,
@@ -97,6 +97,15 @@ function translateApiMessage(message?: string): string | undefined {
         "Not found.": "اطلاعات موردنظر پیدا نشد.",
         "Too many requests.": "تعداد درخواست‌ها زیاد است؛ کمی بعد دوباره تلاش کنید.",
         MANAGER_OFFLINE: "مدیر آفلاین است؛ در حال حاضر امکان ثبت درخواست خرید یا فروش وجود ندارد.",
+        PRODUCT_ACCESS_DENIED: "شما به خرید این محصول دسترسی ندارید.",
+        PRICE_UNAVAILABLE: "قیمت این محصول در حال حاضر در دسترس نیست.",
+        "Product is inactive.": "این محصول غیرفعال است.",
+        "Product is not buyable.": "خرید این محصول در حال حاضر امکان‌پذیر نیست.",
+        "Product is not sellable.": "فروش این محصول در حال حاضر امکان‌پذیر نیست.",
+        "User account is inactive.": "حساب کاربری غیرفعال است.",
+        "Administrator access required.": "دسترسی مدیر لازم است.",
     };
-    return message ? (messages[message] ?? message) : undefined;
+    if (!message) return undefined;
+    if (messages[message]) return messages[message];
+    return /[A-Za-z]/.test(message) ? "انجام درخواست ناموفق بود." : message;
 }

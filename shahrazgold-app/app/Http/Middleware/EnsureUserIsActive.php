@@ -12,7 +12,7 @@ class EnsureUserIsActive
     {
         if (! $request->user()?->is_active || $request->user()?->trashed()) {
             $request->user()?->tokens()->delete();
-            abort(403, 'User account is inactive.');
+            abort(403, 'حساب کاربری غیرفعال است.');
         }
 
         return $next($request);

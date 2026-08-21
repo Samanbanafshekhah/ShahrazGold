@@ -7,6 +7,7 @@ use App\Enums\ProductUnit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -55,5 +56,11 @@ class Product extends Model
     public function currentPrice(): HasOne
     {
         return $this->hasOne(ProductPrice::class)->ofMany(['effective_at' => 'max', 'id' => 'max']);
+    }
+
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_product_permissions')
+            ->withPivot(['can_access', 'can_buy']);
     }
 }

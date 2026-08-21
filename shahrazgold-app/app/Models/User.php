@@ -61,6 +61,23 @@ class User extends Authenticatable
         return $this->accessRole?->canBuyProduct($productId) ?? false;
     }
 
+    public function canAccessProduct(int $productId): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $this->loadMissing('accessRole.products');
+        $role = $this->accessRole;
+        if (! $role?->is_active) {
+            return false;
+        }
+
+        $product = $role->products->firstWhere('id', $productId);
+
+        return (bool) ($product?->pivot?->can_access);
+    }
+
     /**
      * @return array{buy: string, sell: string}
      */

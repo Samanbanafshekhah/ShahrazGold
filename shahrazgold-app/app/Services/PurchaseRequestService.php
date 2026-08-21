@@ -38,10 +38,10 @@ final class PurchaseRequestService
                 ->orderByDesc('effective_at')->orderByDesc('id')->lockForUpdate()->first();
             abort_if(! $price, 409, 'PRICE_UNAVAILABLE');
             $entryMode = EntryMode::from($input['entry_mode']);
-            abort_unless($product->is_active, 409, 'Product is inactive.');
+            abort_unless($product->is_active, 409, 'این محصول غیرفعال است.');
             abort_if($tradeType === TradeType::CustomerBuy && ! $user->canBuyProduct($product->id), 403, 'PRODUCT_ACCESS_DENIED');
-            abort_if($tradeType === TradeType::CustomerBuy && ! $product->is_buyable, 409, 'Product is not buyable.');
-            abort_if($tradeType === TradeType::CustomerSell && ! $product->is_sellable, 409, 'Product is not sellable.');
+            abort_if($tradeType === TradeType::CustomerBuy && ! $product->is_buyable, 409, 'خرید این محصول در حال حاضر امکان‌پذیر نیست.');
+            abort_if($tradeType === TradeType::CustomerSell && ! $product->is_sellable, 409, 'فروش این محصول در حال حاضر امکان‌پذیر نیست.');
             $calculation = $this->calculator->calculate($product, $price, $tradeType, $entryMode, $input['quantity'] ?? null, $input['amount_rial'] ?? null, $user);
 
             if ((int) $input['expected_product_price_id'] !== $price->id) {
@@ -83,7 +83,7 @@ final class PurchaseRequestService
                 PurchaseRequestStatus::Approved => [PurchaseRequestStatus::Completed],
                 default => [],
             };
-            abort_unless(in_array($to, $allowed, true), 409, "Invalid status transition from {$from->value} to {$to->value}.");
+            abort_unless(in_array($to, $allowed, true), 409, "تغییر وضعیت درخواست مجاز نیست.");
             if ($to === PurchaseRequestStatus::Cancelled) {
                 abort_unless($locked->user_id === $actor->id, 403);
             }

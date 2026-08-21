@@ -35,22 +35,22 @@ class TradeRequest extends FormRequest
                 return;
             }
             if (! $product->is_active) {
-                $validator->errors()->add('product_id', 'Product is inactive.');
+                $validator->errors()->add('product_id', 'این محصول غیرفعال است.');
             }
             if ($this->user() && $this->string('trade_type')->value() === TradeType::CustomerBuy->value && ! $this->user()->canBuyProduct($product->id)) {
                 $validator->errors()->add('trade_type', 'PRODUCT_ACCESS_DENIED');
             }
             if ($this->string('trade_type')->value() === TradeType::CustomerBuy->value && ! $product->is_buyable) {
-                $validator->errors()->add('trade_type', 'Product is not buyable.');
+                $validator->errors()->add('trade_type', 'خرید این محصول در حال حاضر امکان‌پذیر نیست.');
             }
             if ($this->string('trade_type')->value() === TradeType::CustomerSell->value && ! $product->is_sellable) {
-                $validator->errors()->add('trade_type', 'Product is not sellable.');
+                $validator->errors()->add('trade_type', 'فروش این محصول در حال حاضر امکان‌پذیر نیست.');
             }
             if ($product->unit === ProductUnit::Count && $this->string('entry_mode')->value() === EntryMode::Quantity->value && ! preg_match('/^[1-9]\d*$/', (string) $this->input('quantity'))) {
-                $validator->errors()->add('quantity', 'Count products require a whole quantity.');
+                $validator->errors()->add('quantity', 'تعداد این محصول باید عدد صحیح باشد.');
             }
             if ($product->unit === ProductUnit::Count && $this->string('entry_mode')->value() === EntryMode::Amount->value) {
-                $validator->errors()->add('entry_mode', 'Count products only support quantity entry mode.');
+                $validator->errors()->add('entry_mode', 'برای این محصول فقط ورود بر اساس تعداد مجاز است.');
             }
         }];
     }

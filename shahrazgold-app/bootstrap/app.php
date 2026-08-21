@@ -35,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed.',
+                'message' => 'اطلاعات واردشده معتبر نیست.',
                 'data' => null,
                 'errors' => $e->errors(),
             ], 422);
@@ -48,7 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthenticated.',
+                'message' => 'نشست شما منقضی شده است؛ دوباره وارد شوید.',
                 'data' => null,
                 'errors' => null,
             ], 401);
@@ -62,11 +62,11 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage() ?: match ($e->getStatusCode()) {
-                    403 => 'Forbidden.',
-                    404 => 'Not found.',
-                    409 => 'Conflict.',
-                    429 => 'Too many requests.',
-                    default => 'Request failed.',
+                    403 => 'اجازه انجام این عملیات را ندارید.',
+                    404 => 'اطلاعات موردنظر پیدا نشد.',
+                    409 => 'تداخل در انجام عملیات رخ داد.',
+                    429 => 'تعداد درخواست‌ها زیاد است؛ کمی بعد دوباره تلاش کنید.',
+                    default => 'انجام درخواست ناموفق بود.',
                 },
                 'data' => null,
                 'errors' => null,
