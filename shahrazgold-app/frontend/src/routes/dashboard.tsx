@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { MarketPriceBoard, PriceUpdateStatus } from "@/components/market-price-board";
 import { PurchaseRequestModal } from "@/components/purchase-request-modal";
-import { refreshAssets, useAssets } from "@/lib/api-data";
+import { refreshAssets, refreshTransactions, useAssets, useTransactions } from "@/lib/api-data";
 import { apiRequest } from "@/lib/api";
-import type { GoldAsset } from "@/lib/types";
 import { useCurrentUser } from "@/lib/auth";
 import { purchaseProductFromAsset, type TradeAction } from "@/lib/purchase";
 import { Info } from "lucide-react";
@@ -17,16 +17,22 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
+    const navigate = useNavigate();
     const { items: assets } = useAssets();
+    const { items: transactions } = useTransactions();
     const [refreshing, setRefreshing] = useState(false);
     const [managerOnline, setManagerOnline] = useState<boolean | null>(null);
     const [selectedTrade, setSelectedTrade] = useState<{
-        asset: GoldAsset;
+        assetSymbol: string;
         action: TradeAction;
     } | null>(null);
     const purchaseTriggerRef = useRef<HTMLElement | null>(null);
+    const knownRequestStatuses = useRef<Map<string, string> | null>(null);
     const user = useCurrentUser();
     const announcement = useMarketAnnouncement();
+    const selectedAsset = selectedTrade
+        ? (assets.find((asset) => asset.symbol === selectedTrade.assetSymbol) ?? null)
+        : null;
     const latestUpdatedAt = useMemo(
         () =>
             assets.reduce<string | undefined>((latest, asset) => {
@@ -66,6 +72,71 @@ function DashboardPage() {
         return () => {
             active = false;
             window.clearInterval(id);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (knownRequestStatuses.current === null) {
+            knownRequestStatuses.current = new Map(
+                transactions.map((transaction) => [transaction.id, transaction.status]),
+            );
+            return;
+        }
+
+        const previousStatuses = knownRequestStatuses.current;
+        const changedRequests = transactions.filter((transaction) => {
+            const previousStatus = previousStatuses.get(transaction.id);
+            return (
+                previousStatus === "pending" &&
+                (transaction.status === "approved" || transaction.status === "rejected")
+            );
+        });
+
+        knownRequestStatuses.current = new Map(
+            transactions.map((transaction) => [transaction.id, transaction.status]),
+        );
+
+        changedRequests.forEach((transaction) => {
+            const approved = transaction.status === "approved";
+            const message = approved
+                ? `درخواست ${transaction.trackingCode} تأیید شد.`
+                : `درخواست ${transaction.trackingCode} رد شد.`;
+            const options = {
+                description:
+                    !approved && transaction.description
+                        ? `علت رد: ${transaction.description}`
+                        : `${transaction.assetTitle} — برای مشاهده جزئیات کلیک کنید.`,
+                duration: 10_000,
+                action: {
+                    label: "مشاهده",
+                    onClick: () =>
+                        navigate({
+                            to: "/transactions/$id",
+                            params: { id: transaction.id },
+                        }),
+                },
+            };
+
+            if (approved) toast.success(message, options);
+            else toast.error(message, options);
+        });
+    }, [navigate, transactions]);
+
+    useEffect(() => {
+        const refreshWhenVisible = () => {
+            if (document.visibilityState === "visible") {
+                void refreshTransactions().catch(() => undefined);
+            }
+        };
+
+        const timer = window.setInterval(refreshWhenVisible, 10_000);
+        window.addEventListener("focus", refreshWhenVisible);
+        document.addEventListener("visibilitychange", refreshWhenVisible);
+
+        return () => {
+            window.clearInterval(timer);
+            window.removeEventListener("focus", refreshWhenVisible);
+            document.removeEventListener("visibilitychange", refreshWhenVisible);
         };
     }, []);
 
@@ -113,7 +184,7 @@ function DashboardPage() {
                             assets={assets}
                             onTrade={(asset, action, trigger) => {
                                 purchaseTriggerRef.current = trigger;
-                                setSelectedTrade({ asset, action });
+                                setSelectedTrade({ assetSymbol: asset.symbol, action });
                             }}
                         />
                     </div>
@@ -122,8 +193,8 @@ function DashboardPage() {
 
             <PurchaseRequestModal
                 product={
-                    selectedTrade
-                        ? purchaseProductFromAsset(selectedTrade.asset, selectedTrade.action)
+                    selectedTrade && selectedAsset
+                        ? purchaseProductFromAsset(selectedAsset, selectedTrade.action)
                         : null
                 }
                 action={selectedTrade?.action}

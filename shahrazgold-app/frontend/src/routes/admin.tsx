@@ -99,10 +99,11 @@ function AuthenticatedAdminLayout() {
                             ? "درخواست خرید جدید از " + incoming[0].buyerName
                             : toPersianDigits(incoming.length) + " درخواست خرید جدید";
                     toast.success(message, {
-                        description: "برای بررسی و تصمیم‌گیری، مرکز درخواست‌ها را باز کنید.",
-                        duration: 8000,
+                        description:
+                            "لیست درخواست‌ها را باز کنید؛ سایر درخواست‌ها نیز زیر هم قابل مشاهده‌اند.",
+                        duration: 10_000,
                         action: {
-                            label: "مشاهده",
+                            label: "مشاهده همه",
                             onClick: () => setRequestCenterOpen(true),
                         },
                     });

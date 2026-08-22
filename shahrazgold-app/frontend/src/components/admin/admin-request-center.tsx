@@ -20,7 +20,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Sheet,
     SheetContent,
@@ -118,9 +117,9 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
                 <SheetContent
                     side="left"
                     dir="rtl"
-                    className="flex h-full w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+                    className="flex h-dvh max-h-dvh w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
                 >
-                    <SheetHeader className="border-b border-border px-5 pb-4 pt-5 text-right">
+                    <SheetHeader className="shrink-0 border-b border-border px-5 pb-4 pt-5 text-right">
                         <div className="flex items-center gap-3 pe-8">
                             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gold-soft text-[color:var(--gold-dark)]">
                                 <ShoppingBag className="h-5 w-5" />
@@ -166,7 +165,7 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
                         </div>
                     </SheetHeader>
 
-                    <ScrollArea className="min-h-0 flex-1">
+                    <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
                         <div className="space-y-3 p-4">
                             {sortedRequests.length === 0 ? (
                                 <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-border px-6 text-center">
@@ -195,9 +194,9 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
                                 ))
                             )}
                         </div>
-                    </ScrollArea>
+                    </div>
 
-                    <div className="border-t border-border bg-background p-4">
+                    <div className="shrink-0 border-t border-border bg-background px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                         <Button variant="outline" className="w-full" onClick={openFullPage}>
                             مشاهده صفحه کامل درخواست‌ها
                             <ArrowLeft className="ms-2 h-4 w-4" />

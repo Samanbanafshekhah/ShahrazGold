@@ -215,7 +215,9 @@ function mapRequest(request: ApiRequest): AdminPurchaseRequest {
 }
 
 async function refreshPrices(): Promise<void> {
-    const response = await apiRequest<ApiProduct[]>("admin/products?per_page=100");
+    const response = await apiRequest<ApiProduct[]>("admin/products?per_page=100", {
+        cache: "no-store",
+    });
     syncProducts(response.data.map(mapProduct));
 }
 
@@ -322,9 +324,7 @@ function productPayload(input: AdminProductInput, current?: AdminPriceItem) {
         is_sellable: true,
         trade_adjustment_enabled: input.sellPriceDifferenceToman > 0,
         trade_adjustment_percent: "0",
-        sell_price_difference_rial: Math.round(
-            Math.max(0, input.sellPriceDifferenceToman) * 10,
-        ),
+        sell_price_difference_rial: Math.round(Math.max(0, input.sellPriceDifferenceToman) * 10),
     };
     if (pricingMode === "derived") {
         payload.price_source_id = current?.priceSourceId;
@@ -364,6 +364,8 @@ export async function updateAdminProduct(
 ): Promise<AdminProductMutationResult> {
     const current = prices.find((item) => item.id === id);
     if (!current) return { ok: false, error: "محصول موردنظر پیدا نشد." };
+    const priceDifferenceChanged =
+        current.sellPriceDifferenceToman !== input.sellPriceDifferenceToman;
     try {
         await apiRequest<ApiProduct>(`admin/products/${id}`, {
             method: "PUT",
@@ -373,6 +375,7 @@ export async function updateAdminProduct(
             await writePrice(id, input.price);
         }
         await refreshPrices();
+        if (priceDifferenceChanged) announcePriceUpdate();
         const item = prices.find((product) => product.id === id);
         return item ? { ok: true, item } : { ok: false, error: "محصول بازخوانی نشد." };
     } catch (error) {

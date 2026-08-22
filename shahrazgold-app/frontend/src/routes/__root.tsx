@@ -97,7 +97,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                     "مشاهده قیمت طلا و سکه، سابقه تراکنش‌ها و مدیریت حساب کاربری در بستری امن.",
             },
             { property: "og:type", content: "website" },
+            { property: "og:image", content: "/ShahrazGoldLogo2.png" },
+            { property: "og:image:alt", content: "لوگوی شهراز‌گلد" },
             { name: "twitter:card", content: "summary_large_image" },
+            { name: "twitter:image", content: "/ShahrazGoldLogo2.png" },
+            {
+                "script:ld+json": {
+                    "@context": "https://schema.org",
+                    "@type": "Organization",
+                    name: "شهراز‌گلد",
+                    url: "/",
+                    logo: "/ShahrazGoldLogo2.png",
+                },
+            },
         ],
         links: [
             {
@@ -105,6 +117,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                 href: appCss,
             },
             { rel: "icon", href: "/ShahrazGoldLogo2.png", type: "image/png" },
+            { rel: "image_src", href: "/ShahrazGoldLogo2.png" },
             { rel: "apple-touch-icon", href: "/ShahrazGoldLogo2.png" },
             { rel: "preconnect", href: "https://fonts.googleapis.com" },
             { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

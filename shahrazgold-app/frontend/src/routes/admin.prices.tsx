@@ -184,8 +184,7 @@ function PricesPage() {
             sellPriceDifferenceToman < 0 ||
             sellPriceDifferenceToman >= price
         ) {
-            errors.sellPriceDifferenceToman =
-                "اختلاف باید عددی نامنفی و کمتر از قیمت خرید باشد.";
+            errors.sellPriceDifferenceToman = "اختلاف باید عددی نامنفی و کمتر از قیمت خرید باشد.";
         }
 
         setProductErrors(errors);
@@ -268,8 +267,8 @@ function PricesPage() {
         >
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
-                    قیمت سبز یک گام افزایش و قیمت قرمز یک گام کاهش را ثبت می‌کند؛ مقدار گام هر
-                    محصول جداگانه قابل تنظیم است.
+                    قیمت سبز، قیمت خرید و قیمت قرمز، قیمت فروش مشتری است؛ با کلیک روی آن‌ها قیمت
+                    پایه یک گام افزایش یا کاهش پیدا می‌کند.
                 </p>
                 <div className="flex w-full flex-wrap gap-2 sm:w-auto">
                     <Button size="sm" onClick={openCreateProduct} className="flex-1 sm:flex-none">
@@ -657,10 +656,10 @@ function AdminPriceSection({
                     </p>
                 </div>
                 <span className="text-center text-[10px] font-bold text-muted-foreground xl:hidden">
-                    افزایش
+                    خرید
                 </span>
                 <span className="text-center text-[10px] font-bold text-muted-foreground xl:hidden">
-                    کاهش
+                    فروش
                 </span>
                 <span className="hidden shrink-0 rounded-full bg-gold-soft px-2.5 py-1 text-[10px] font-bold text-[color:var(--gold-dark)] sm:text-[11px] xl:inline-flex">
                     {toPersianDigits(items.length)} محصول
@@ -669,8 +668,8 @@ function AdminPriceSection({
 
             <div className="admin-price-header-grid hidden grid-cols-[minmax(170px,1.4fr)_minmax(150px,1fr)_minmax(150px,1fr)_90px_120px] gap-3 border-b border-border px-5 py-2.5 text-[11px] text-muted-foreground xl:grid">
                 <span>محصول</span>
-                <span>افزایش</span>
-                <span>کاهش</span>
+                <span>خرید</span>
+                <span>فروش</span>
                 <span>تغییر</span>
                 <span>عملیات</span>
             </div>
@@ -723,14 +722,14 @@ function AdminPriceRow({
                 </div>
                 <PriceActionButton
                     tone="increase"
-                    label={`افزایش قیمت ${item.title} به ${formatNumber(item.price + item.priceStep)} تومان`}
-                    value={item.price + item.priceStep}
+                    label={`قیمت خرید ${item.title}: ${formatNumber(item.price)} تومان؛ افزایش یک گام`}
+                    value={item.price}
                     onClick={() => onIncrease(item)}
                 />
                 <PriceActionButton
                     tone="decrease"
-                    label={`کاهش قیمت ${item.title} به ${formatNumber(Math.max(0, item.price - item.priceStep))} تومان`}
-                    value={Math.max(0, item.price - item.priceStep)}
+                    label={`قیمت فروش ${item.title}: ${formatNumber(Math.max(0, item.price - item.sellPriceDifferenceToman))} تومان؛ کاهش یک گام`}
+                    value={Math.max(0, item.price - item.sellPriceDifferenceToman)}
                     disabled={decreaseDisabled}
                     onClick={() => onDecrease(item)}
                 />
@@ -860,7 +859,7 @@ function PriceActionButton({
                 (increase ? "bg-positive-soft" : "bg-negative-soft disabled:bg-muted/55")
             }
         >
-            <span className="sr-only">{increase ? "افزایش" : "کاهش"}</span>
+            <span className="sr-only">{increase ? "قیمت خرید" : "قیمت فروش"}</span>
             <strong
                 className={
                     "block whitespace-nowrap text-sm font-black tracking-tight tabular-nums sm:text-base lg:text-lg " +

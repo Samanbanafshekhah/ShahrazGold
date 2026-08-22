@@ -52,17 +52,6 @@ function LoginPage() {
         <AuthShell
             title="ورود به حساب کاربری"
             description="برای مشاهده قیمت‌ها و تراکنش‌ها وارد شوید."
-            footer={
-                <span className="text-muted-foreground">
-                    حساب کاربری ندارید؟{" "}
-                    <Link
-                        to="/register"
-                        className="font-bold text-[color:var(--gold-dark)] hover:underline"
-                    >
-                        ثبت‌نام کنید
-                    </Link>
-                </span>
-            }
         >
             <form onSubmit={onSubmit} className="space-y-4" noValidate>
                 <div>
