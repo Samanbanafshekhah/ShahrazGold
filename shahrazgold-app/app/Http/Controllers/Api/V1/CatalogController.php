@@ -31,7 +31,10 @@ class CatalogController extends Controller
         $q->orderBy('display_order')->orderBy('id');
         $p = $q->paginate(min($request->integer('per_page', 20), 100));
 
-        return $this->paginated($p, fn ($x) => (new ProductResource($x))->resolve($request));
+        return $this
+            ->paginated($p, fn ($x) => (new ProductResource($x))->resolve($request))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+            ->header('Pragma', 'no-cache');
     }
 
     public function product(Request $request, Product $product): JsonResponse
@@ -47,11 +50,14 @@ class CatalogController extends Controller
         $this->resolveOptionalUser($request);
         $products = $this->visibleProducts($request)->orderBy('display_order')->get();
 
-        return $this->success($products->map(function ($product) use ($request) {
-            $resource = (new ProductResource($product))->resolve($request);
+        return $this
+            ->success($products->map(function ($product) use ($request) {
+                $resource = (new ProductResource($product))->resolve($request);
 
-            return ['product_id' => $product->id, 'symbol' => $product->symbol, 'name' => $product->name, 'raw_price_rial' => $resource['current_price']['raw_price_rial'] ?? null, 'buy_price_rial' => $resource['current_price']['buy_price_rial'] ?? null, 'sell_price_rial' => $resource['current_price']['sell_price_rial'] ?? null, 'is_price_available' => (bool) $product->currentPrice, 'effective_at' => $product->currentPrice?->effective_at->utc()->toIso8601String()];
-        }));
+                return ['product_id' => $product->id, 'symbol' => $product->symbol, 'name' => $product->name, 'raw_price_rial' => $resource['current_price']['raw_price_rial'] ?? null, 'buy_price_rial' => $resource['current_price']['buy_price_rial'] ?? null, 'sell_price_rial' => $resource['current_price']['sell_price_rial'] ?? null, 'is_price_available' => (bool) $product->currentPrice, 'effective_at' => $product->currentPrice?->effective_at->utc()->toIso8601String()];
+            }))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+            ->header('Pragma', 'no-cache');
     }
 
     private function resolveOptionalUser(Request $request): void

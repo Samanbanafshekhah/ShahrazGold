@@ -23,7 +23,10 @@ class PurchaseRequestController extends Controller
             ->when($request->filled('min_amount_rial'), fn ($x) => $x->where('total_amount_rial', '>=', $request->min_amount_rial))->when($request->filled('max_amount_rial'), fn ($x) => $x->where('total_amount_rial', '<=', $request->max_amount_rial))
             ->orderBy('created_at', $request->input('sort') === 'oldest' ? 'asc' : 'desc');
 
-        return $this->paginated($q->paginate(min($request->integer('per_page', 15), 100)), fn ($x) => (new PurchaseRequestResource($x))->resolve());
+        return $this
+            ->paginated($q->paginate(min($request->integer('per_page', 15), 100)), fn ($x) => (new PurchaseRequestResource($x))->resolve())
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+            ->header('Pragma', 'no-cache');
     }
 
     public function show(PurchaseRequest $purchaseRequest): JsonResponse

@@ -118,16 +118,21 @@ function AuthenticatedAdminLayout() {
         void checkForNewRequests(true);
         const timer = window.setInterval(() => {
             if (document.visibilityState === "visible") void checkForNewRequests();
-        }, 10_000);
+        }, 3_000);
         const handleVisibility = () => {
             if (document.visibilityState === "visible") void checkForNewRequests();
         };
+        const handleFocus = () => void checkForNewRequests();
         document.addEventListener("visibilitychange", handleVisibility);
+        window.addEventListener("focus", handleFocus);
+        window.addEventListener("online", handleFocus);
 
         return () => {
             cancelled = true;
             window.clearInterval(timer);
             document.removeEventListener("visibilitychange", handleVisibility);
+            window.removeEventListener("focus", handleFocus);
+            window.removeEventListener("online", handleFocus);
         };
     }, []);
 

@@ -23,6 +23,16 @@ interface ApiProduct {
     is_sellable: boolean;
 }
 
+interface ApiMarketPrice {
+    product_id: number;
+    symbol: string;
+    raw_price_rial: string | null;
+    buy_price_rial: string | null;
+    sell_price_rial: string | null;
+    is_price_available: boolean;
+    effective_at: string | null;
+}
+
 interface ApiPurchaseRequest {
     id: number;
     request_number: string;
@@ -50,8 +60,9 @@ const transactionListeners = new Set<Listener>();
 let assets: GoldAsset[] = [];
 let transactions: Transaction[] = [];
 let assetsPromise: Promise<GoldAsset[]> | null = null;
+let assetPricesPromise: Promise<GoldAsset[]> | null = null;
 let transactionsPromise: Promise<Transaction[]> | null = null;
-const ASSET_REFRESH_INTERVAL_MS = 5_000;
+const ASSET_REFRESH_INTERVAL_MS = 1_000;
 
 function notify(listeners: Set<Listener>) {
     listeners.forEach((listener) => listener());
@@ -136,6 +147,68 @@ export async function refreshAssets(): Promise<GoldAsset[]> {
     return assetsPromise;
 }
 
+export async function refreshAssetPrices(): Promise<GoldAsset[]> {
+    if (assets.length === 0) return refreshAssets();
+    if (assetPricesPromise) return assetPricesPromise;
+
+    assetPricesPromise = apiRequest<ApiMarketPrice[]>("market/prices", {
+        cache: "no-store",
+    })
+        .then((response) => {
+            const pricesByProduct = new Map(
+                response.data.map((price) => [price.product_id, price]),
+            );
+            let changed = false;
+
+            const nextAssets = assets.map((asset) => {
+                const marketPrice = asset.productId
+                    ? pricesByProduct.get(asset.productId)
+                    : response.data.find((price) => price.symbol === asset.symbol);
+                if (!marketPrice) return asset;
+
+                const rawPrice = Number(marketPrice.raw_price_rial ?? 0);
+                const buyPrice = Number(marketPrice.buy_price_rial ?? rawPrice);
+                const sellPrice = Number(marketPrice.sell_price_rial ?? rawPrice);
+                const updatedAt = marketPrice.effective_at ?? new Date(0).toISOString();
+                const priceChanged =
+                    asset.price !== buyPrice ||
+                    asset.buy !== buyPrice ||
+                    asset.sell !== sellPrice ||
+                    asset.available !== marketPrice.is_price_available ||
+                    asset.updatedAt !== updatedAt;
+
+                if (!priceChanged) return asset;
+                changed = true;
+                const previousPrice = asset.price;
+                const difference = buyPrice - previousPrice;
+
+                return {
+                    ...asset,
+                    price: buyPrice,
+                    buy: buyPrice,
+                    sell: sellPrice,
+                    available: marketPrice.is_price_available,
+                    change: difference,
+                    changePercent: previousPrice === 0 ? 0 : (difference / previousPrice) * 100,
+                    high: Math.max(asset.high, buyPrice),
+                    low: asset.low === 0 ? buyPrice : Math.min(asset.low, buyPrice),
+                    updatedAt,
+                };
+            });
+
+            if (changed) {
+                assets = nextAssets;
+                notify(assetListeners);
+            }
+            return getAssets();
+        })
+        .finally(() => {
+            assetPricesPromise = null;
+        });
+
+    return assetPricesPromise;
+}
+
 export function getAssets(): GoldAsset[] {
     return assets.map((asset) => ({ ...asset }));
 }
@@ -152,7 +225,7 @@ export function useAssets(): { items: GoldAsset[]; loading: boolean; error?: str
     }));
     useEffect(() => {
         const update = () => setState({ items: getAssets(), loading: false });
-        const refreshSilently = () => void refreshAssets().catch(() => undefined);
+        const refreshSilently = () => void refreshAssetPrices().catch(() => undefined);
         const refreshWhenVisible = () => {
             if (document.visibilityState === "visible") refreshSilently();
         };
@@ -169,6 +242,7 @@ export function useAssets(): { items: GoldAsset[]; loading: boolean; error?: str
         const timer = window.setInterval(refreshWhenVisible, ASSET_REFRESH_INTERVAL_MS);
         const unsubscribePriceUpdates = subscribeToPriceUpdates(refreshSilently);
         window.addEventListener("focus", refreshSilently);
+        window.addEventListener("online", refreshSilently);
         document.addEventListener("visibilitychange", refreshWhenVisible);
 
         return () => {
@@ -176,6 +250,7 @@ export function useAssets(): { items: GoldAsset[]; loading: boolean; error?: str
             window.clearInterval(timer);
             unsubscribePriceUpdates();
             window.removeEventListener("focus", refreshSilently);
+            window.removeEventListener("online", refreshSilently);
             document.removeEventListener("visibilitychange", refreshWhenVisible);
         };
     }, []);

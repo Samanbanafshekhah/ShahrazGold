@@ -122,6 +122,7 @@ const announcementListeners = new Set<Listener>();
 let prices: AdminPriceItem[] = [];
 let requests: AdminPurchaseRequest[] = [];
 let onlineUsers: AdminOnlineUser[] = [];
+const priceAdjustmentQueues = new Map<string, Promise<void>>();
 let announcement: AdminAnnouncement = {
     text: "",
     active: false,
@@ -222,7 +223,9 @@ async function refreshPrices(): Promise<void> {
 }
 
 export async function refreshAdminRequests(): Promise<AdminPurchaseRequest[]> {
-    const response = await apiRequest<ApiRequest[]>("admin/purchase-requests?per_page=100");
+    const response = await apiRequest<ApiRequest[]>("admin/purchase-requests?per_page=100", {
+        cache: "no-store",
+    });
     requests = response.data.map(mapRequest);
     emit(requestListeners);
     return [...requests];
@@ -406,13 +409,25 @@ export async function updateAdminPrice(id: string, newPrice: number): Promise<vo
     await refreshPrices();
 }
 
-export async function adjustAdminPrice(id: string, amount: number): Promise<void> {
-    const item = prices.find((product) => product.id === id);
-    if (!item) throw new Error("محصول پیدا نشد.");
-    if (item.pricingMode !== "manual") {
-        throw new Error("قیمت محصول مشتق‌شده باید از طریق منبع مظنه به‌روزرسانی شود.");
-    }
-    await updateAdminPrice(id, item.price + amount);
+export function adjustAdminPrice(id: string, amount: number): Promise<void> {
+    const previousAdjustment = priceAdjustmentQueues.get(id) ?? Promise.resolve();
+    const adjustment = previousAdjustment
+        .catch(() => undefined)
+        .then(async () => {
+            const item = prices.find((product) => product.id === id);
+            if (!item) throw new Error("محصول پیدا نشد.");
+            if (item.pricingMode !== "manual") {
+                throw new Error("قیمت محصول مشتق‌شده باید از طریق منبع مظنه به‌روزرسانی شود.");
+            }
+            await updateAdminPrice(id, item.price + amount);
+        });
+
+    priceAdjustmentQueues.set(id, adjustment);
+    const cleanup = () => {
+        if (priceAdjustmentQueues.get(id) === adjustment) priceAdjustmentQueues.delete(id);
+    };
+    void adjustment.then(cleanup, cleanup);
+    return adjustment;
 }
 
 export async function refreshAllAdminPrices(): Promise<void> {
