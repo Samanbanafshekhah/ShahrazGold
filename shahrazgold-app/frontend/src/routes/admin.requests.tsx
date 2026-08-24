@@ -126,7 +126,7 @@ function RequestsPage() {
     }
 
     return (
-        <AdminPage title="درخواست‌های خرید" subtitle="بررسی و مدیریت درخواست‌های ثبت‌شده">
+        <AdminPage title="درخواست‌های خرید و فروش" subtitle="بررسی و مدیریت درخواست‌های ثبت‌شده">
             {/* filters */}
             <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-elegant md:grid-cols-4">
                 <div className="relative md:col-span-2">
@@ -217,7 +217,7 @@ function RequestsPage() {
                             <thead className="bg-muted/40 text-xs text-muted-foreground">
                                 <tr>
                                     <th className="p-3 font-medium">شماره</th>
-                                    <th className="p-3 font-medium">خریدار</th>
+                                    <th className="p-3 font-medium">مشتری / نوع درخواست</th>
                                     <th className="p-3 font-medium">موبایل</th>
                                     <th className="p-3 font-medium">محصول</th>
                                     <th className="p-3 font-medium">مقدار</th>
@@ -232,10 +232,27 @@ function RequestsPage() {
                                 {pageItems.map((r) => (
                                     <tr
                                         key={r.id}
-                                        className="border-t border-border hover:bg-muted/30"
+                                        className={
+                                            "border-t transition-colors " +
+                                            (r.tradeType === "sell"
+                                                ? "border-[color:var(--negative)]/25 bg-trade-sell hover:bg-trade-sell"
+                                                : "border-[color:var(--positive)]/25 bg-trade-buy hover:bg-trade-buy")
+                                        }
                                     >
                                         <td className="p-3 font-mono text-xs">{r.code}</td>
-                                        <td className="p-3 font-bold">{r.buyerName}</td>
+                                        <td className="p-3">
+                                            <div className="font-bold">{r.buyerName}</div>
+                                            <div
+                                                className={
+                                                    "mt-1 text-xs font-bold " +
+                                                    (r.tradeType === "sell"
+                                                        ? "text-negative"
+                                                        : "text-positive")
+                                                }
+                                            >
+                                                درخواست {r.tradeType === "sell" ? "فروش" : "خرید"}
+                                            </div>
+                                        </td>
                                         <td className="p-3 text-muted-foreground">
                                             {toPersianDigits(r.mobile)}
                                         </td>
@@ -270,11 +287,29 @@ function RequestsPage() {
                     </div>
                     <div className="divide-y divide-border md:hidden">
                         {pageItems.map((r) => (
-                            <article key={r.id} className="min-w-0 space-y-3 p-4">
+                            <article
+                                key={r.id}
+                                className={
+                                    "min-w-0 space-y-3 p-4 " +
+                                    (r.tradeType === "sell"
+                                        ? "bg-trade-sell"
+                                        : "bg-trade-buy")
+                                }
+                            >
                                 <div className="flex min-w-0 items-start justify-between gap-3">
                                     <div className="min-w-0">
                                         <div className="truncate text-sm font-bold">
                                             {r.buyerName}
+                                        </div>
+                                        <div
+                                            className={
+                                                "mt-1 text-xs font-bold " +
+                                                (r.tradeType === "sell"
+                                                    ? "text-negative"
+                                                    : "text-positive")
+                                            }
+                                        >
+                                            درخواست {r.tradeType === "sell" ? "فروش" : "خرید"}
                                         </div>
                                         <div
                                             className="mt-1 font-mono text-[11px] text-muted-foreground"
@@ -404,7 +439,7 @@ function RequestsPage() {
                                 </div>
                                 <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs">
                                     <div className="mb-2 font-bold text-foreground">
-                                        اطلاعات خریدار
+                                        اطلاعات مشتری
                                     </div>
                                     <Row label="نام و نام خانوادگی" value={selected.buyerName} />
                                     <Row
@@ -414,7 +449,7 @@ function RequestsPage() {
                                 </div>
                                 <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs">
                                     <div className="mb-2 font-bold text-foreground">
-                                        جزئیات خرید
+                                        جزئیات {selected.tradeType === "sell" ? "فروش" : "خرید"}
                                     </div>
                                     <Row label="محصول" value={selected.productTitle} />
                                     <Row

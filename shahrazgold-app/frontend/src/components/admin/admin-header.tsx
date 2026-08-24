@@ -84,8 +84,8 @@ export function AdminHeader({
                         onClick={onOpenRequests}
                         aria-label={
                             pendingRequests > 0
-                                ? pendingLabel + " درخواست خرید در انتظار بررسی"
-                                : "مرکز درخواست‌های خرید"
+                                ? pendingLabel + " درخواست خرید یا فروش در انتظار بررسی"
+                                : "مرکز درخواست‌های خرید و فروش"
                         }
                         aria-haspopup="dialog"
                         className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:border-[color:var(--gold)] hover:bg-gold-soft hover:text-[color:var(--gold-dark)] sm:h-10 sm:w-10"

@@ -162,6 +162,12 @@
 @utility bg-negative-soft {
     background-color: color-mix(in oklab, var(--negative) 12%, transparent);
 }
+@utility bg-trade-buy {
+    background-color: color-mix(in oklab, var(--positive) 14%, var(--card));
+}
+@utility bg-trade-sell {
+    background-color: color-mix(in oklab, var(--negative) 14%, var(--card));
+}
 @utility bg-gold-soft {
     background-color: var(--gold-soft);
 }

@@ -126,7 +126,7 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
                             </span>
                             <div className="min-w-0">
                                 <SheetTitle className="text-right text-base">
-                                    مرکز درخواست‌های خرید
+                                    مرکز درخواست‌های خرید و فروش
                                 </SheetTitle>
                                 <SheetDescription className="mt-1 text-right text-xs">
                                     بررسی و تصمیم‌گیری بدون خروج از صفحه فعلی
@@ -213,7 +213,9 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
             >
                 <DialogContent dir="rtl">
                     <DialogHeader>
-                        <DialogTitle className="text-right">رد درخواست خرید</DialogTitle>
+                        <DialogTitle className="text-right">
+                            رد درخواست {rejectTarget?.tradeType === "sell" ? "فروش" : "خرید"}
+                        </DialogTitle>
                         <DialogDescription className="text-right">
                             علت رد درخواست {rejectTarget?.code} در سوابق ثبت می‌شود.
                         </DialogDescription>
@@ -263,15 +265,23 @@ function RequestCard({
     return (
         <article
             className={
-                "rounded-2xl border bg-card p-4 shadow-elegant transition-colors " +
-                (request.status === "pending"
-                    ? "border-[color:var(--warning)]/35"
-                    : "border-border")
+                "rounded-2xl border p-4 shadow-elegant transition-colors " +
+                (request.tradeType === "sell"
+                    ? "border-[color:var(--negative)]/45 bg-trade-sell"
+                    : "border-[color:var(--positive)]/45 bg-trade-buy")
             }
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="truncate text-sm font-bold">{request.buyerName}</div>
+                    <div
+                        className={
+                            "mt-1 text-xs font-bold " +
+                            (request.tradeType === "sell" ? "text-negative" : "text-positive")
+                        }
+                    >
+                        درخواست {request.tradeType === "sell" ? "فروش" : "خرید"}
+                    </div>
                     <div className="mt-1 font-mono text-[11px] text-muted-foreground" dir="ltr">
                         {request.code}
                     </div>

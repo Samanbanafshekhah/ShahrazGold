@@ -148,7 +148,14 @@ function TransactionsPage() {
                     >
                       <td className="p-3 font-bold">{r.buyerName}</td>
                       <td className="p-3 text-muted-foreground">{toPersianDigits(r.mobile)}</td>
-                      <td className="p-3">درخواست خرید</td>
+                      <td
+                        className={
+                          "p-3 font-bold " +
+                          (r.tradeType === "sell" ? "text-negative" : "text-positive")
+                        }
+                      >
+                        درخواست {r.tradeType === "sell" ? "فروش" : "خرید"}
+                      </td>
                       <td className="p-3">{r.productTitle}</td>
                       <td className="p-3">
                         {toPersianDigits(r.weight)} {r.unit}

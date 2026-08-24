@@ -6,7 +6,6 @@ import { AdminRequestCenter } from "@/components/admin/admin-request-center";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { useAdminSession } from "@/lib/admin-auth";
 import { refreshAdminRequests, useAdminRequests } from "@/lib/admin-data";
-import { toPersianDigits } from "@/lib/formatters";
 
 interface AdminOutletContextValue {
     openMenu: () => void;
@@ -94,18 +93,19 @@ function AuthenticatedAdminLayout() {
 
                 if (incoming.length > 0) {
                     setRequestSignal((signal) => signal + 1);
-                    const message =
-                        incoming.length === 1
-                            ? "درخواست خرید جدید از " + incoming[0].buyerName
-                            : toPersianDigits(incoming.length) + " درخواست خرید جدید";
-                    toast.success(message, {
-                        description:
-                            "لیست درخواست‌ها را باز کنید؛ سایر درخواست‌ها نیز زیر هم قابل مشاهده‌اند.",
-                        duration: 10_000,
-                        action: {
-                            label: "مشاهده همه",
-                            onClick: () => setRequestCenterOpen(true),
-                        },
+                    incoming.forEach((request) => {
+                        const isSell = request.tradeType === "sell";
+                        toast(isSell ? "درخواست فروش جدید" : "درخواست خرید جدید", {
+                            description: `${request.buyerName} یک درخواست ${isSell ? "فروش" : "خرید"} ثبت کرده است.`,
+                            duration: 10_000,
+                            className: isSell
+                                ? "!border-[color:var(--negative)]/50 !bg-trade-sell"
+                                : "!border-[color:var(--positive)]/50 !bg-trade-buy",
+                            action: {
+                                label: "مشاهده",
+                                onClick: () => setRequestCenterOpen(true),
+                            },
+                        });
                     });
                 }
             } catch {

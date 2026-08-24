@@ -99,8 +99,8 @@ function DashboardPage() {
         changedRequests.forEach((transaction) => {
             const approved = transaction.status === "approved";
             const message = approved
-                ? `درخواست ${transaction.trackingCode} تأیید شد.`
-                : `درخواست ${transaction.trackingCode} رد شد.`;
+                ? "درخواست شما توسط مدیر تأیید شد."
+                : "درخواست شما توسط مدیر رد شد.";
             const options = {
                 description:
                     !approved && transaction.description
@@ -155,14 +155,14 @@ function DashboardPage() {
                 </header>
 
                 {announcement && (
-                    <aside className="mb-3 flex items-start gap-2.5 rounded-xl border border-[color:var(--gold)]/20 bg-gold-soft/60 px-3 py-3 sm:mb-4 sm:px-4">
+                    <aside className="mb-4 flex items-start gap-3 rounded-2xl border border-[color:var(--gold)]/50 bg-[color:color-mix(in_oklab,var(--gold-soft)_72%,var(--gold)_28%)] px-4 py-4 shadow-[0_8px_24px_-14px_var(--gold)] sm:mb-6 sm:gap-4 sm:px-6 sm:py-5">
                         <Info
-                            className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--gold-dark)]"
+                            className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--gold-dark)] sm:h-6 sm:w-6"
                             aria-hidden
                         />
-                        <div>
-                            <h2 className="text-[11px] font-bold sm:text-xs">اطلاعیه بازار</h2>
-                            <p className="mt-1 text-[10px] leading-5 text-muted-foreground sm:text-xs sm:leading-6">
+                        <div className="min-w-0 flex-1">
+                            <h2 className="text-sm font-extrabold text-[color:var(--gold-dark)] sm:text-base">اطلاعیه بازار</h2>
+                            <p className="mt-1.5 text-base font-medium leading-8 text-foreground sm:text-lg sm:leading-9">
                                 {announcement}
                             </p>
                         </div>

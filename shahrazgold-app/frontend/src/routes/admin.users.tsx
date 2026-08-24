@@ -60,7 +60,8 @@ type AdminUser = {
     lastName: string;
     mobile: string;
     email: string;
-    role: UserRole;
+    role: string;
+    roleName: string;
     active: boolean;
     mobileVerifiedAt: string | null;
     lastLoginAt: string | null;
@@ -74,6 +75,9 @@ type ApiUser = {
     mobile: string;
     email?: string | null;
     role: UserRole;
+    role_id?: number | null;
+    role_name?: string | null;
+    role_slug?: string | null;
     is_active: boolean;
     mobile_verified_at?: string | null;
     last_login_at?: string | null;
@@ -105,13 +109,15 @@ const EMPTY_FORM: UserForm = {
 };
 
 function mapUser(user: ApiUser): AdminUser {
+    const role = user.role_slug ?? user.role;
     return {
         id: String(user.id),
         firstName: user.first_name,
         lastName: user.last_name,
         mobile: user.mobile,
         email: user.email ?? "",
-        role: user.role,
+        role,
+        roleName: user.role_name ?? (role === "admin" ? "مدیر" : "مشتری"),
         active: user.is_active,
         mobileVerifiedAt: user.mobile_verified_at ?? null,
         lastLoginAt: user.last_login_at ?? null,
@@ -140,7 +146,7 @@ function UsersPage() {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
     const [search, setSearch] = useState("");
-    const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
+    const [roleFilter, setRoleFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [form, setForm] = useState<UserForm>(EMPTY_FORM);
@@ -297,15 +303,18 @@ function UsersPage() {
                         </div>
                         <Select
                             value={roleFilter}
-                            onValueChange={(value) => setRoleFilter(value as "all" | UserRole)}
+                            onValueChange={setRoleFilter}
                         >
                             <SelectTrigger className="h-10">
                                 <SelectValue placeholder="نقش" />
                             </SelectTrigger>
                             <SelectContent dir="rtl">
                                 <SelectItem value="all">همه نقش‌ها</SelectItem>
-                                <SelectItem value="customer">مشتری</SelectItem>
-                                <SelectItem value="admin">مدیر</SelectItem>
+                                {roles.map((role) => (
+                                    <SelectItem key={role.slug} value={role.slug}>
+                                        {role.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                         <Select
@@ -655,7 +664,7 @@ function UserList({ users }: { users: AdminUser[] }) {
                                     <ContactInfo user={user} />
                                 </td>
                                 <td className="p-3">
-                                    <RoleBadge role={user.role} />
+                                    <RoleBadge role={user.role} roleName={user.roleName} />
                                 </td>
                                 <td className="p-3">
                                     <StatusBadge active={user.active} />
@@ -683,7 +692,7 @@ function UserList({ users }: { users: AdminUser[] }) {
                         </div>
                         <ContactInfo user={user} />
                         <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
-                            <RoleBadge role={user.role} />
+                            <RoleBadge role={user.role} roleName={user.roleName} />
                             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                                 <CalendarDays className="h-3.5 w-3.5" />
                                 عضویت {formatPersianDate(user.createdAt)}
@@ -731,7 +740,7 @@ function ContactInfo({ user }: { user: AdminUser }) {
     );
 }
 
-function RoleBadge({ role }: { role: UserRole }) {
+function RoleBadge({ role, roleName }: { role: string; roleName: string }) {
     return (
         <span
             className={
@@ -741,7 +750,7 @@ function RoleBadge({ role }: { role: UserRole }) {
                     : "bg-muted text-muted-foreground")
             }
         >
-            {role === "admin" ? "مدیر" : "مشتری"}
+            {roleName}
         </span>
     );
 }

@@ -33,6 +33,7 @@ export interface AdminPurchaseRequest {
     unit: string;
     unitPrice: number;
     total: number;
+    tradeType: "buy" | "sell";
     createdAt: string;
     status: AdminRequestStatus;
     rejectionReason?: string;
@@ -83,6 +84,7 @@ interface ApiRequest {
     calculated_quantity: string;
     final_unit_price_rial: string;
     total_amount_rial: string;
+    trade_type: "customer_buy" | "customer_sell";
     status: "pending" | "approved" | "rejected" | "cancelled" | "completed";
     admin_note?: string | null;
     created_at: string;
@@ -207,6 +209,7 @@ function mapRequest(request: ApiRequest): AdminPurchaseRequest {
         unit: unitLabel(request.product.unit),
         unitPrice: Number(request.final_unit_price_rial) / 10,
         total: Number(request.total_amount_rial) / 10,
+        tradeType: request.trade_type === "customer_sell" ? "sell" : "buy",
         createdAt: request.created_at,
         status,
         rejectionReason:

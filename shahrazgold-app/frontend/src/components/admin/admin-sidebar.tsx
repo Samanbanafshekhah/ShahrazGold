@@ -30,7 +30,7 @@ const NAV: NavItem[] = [
     { to: "/admin", label: "داشبورد", icon: LayoutDashboard, exact: true },
     { to: "/admin/prices", label: "مدیریت قیمت‌ها", icon: Coins },
     { to: "/admin/categories", label: "مدیریت دسته‌بندی‌ها", icon: FolderTree },
-    { to: "/admin/requests", label: "درخواست‌های خرید", icon: ShoppingBag },
+    { to: "/admin/requests", label: "درخواست‌های خرید و فروش", icon: ShoppingBag },
     { to: "/admin/users", label: "مدیریت کاربران", icon: Users },
     { to: "/admin/roles", label: "مدیریت نقش‌ها", icon: ShieldCheck },
     { to: "/admin/announcement", label: "اطلاعیه بازار", icon: Megaphone },
