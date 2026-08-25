@@ -61,8 +61,8 @@ function RegisterPage() {
         });
         setLoading(false);
         if (res.ok) {
-            toast.success("حساب شما با موفقیت ساخته شد.");
-            nav({ to: "/dashboard" });
+            toast.success("کد تأیید برای شما پیامک شد.");
+            nav({ to: "/verify-otp" });
         } else {
             toast.error(res.error ?? "ثبت‌نام ناموفق بود.");
         }

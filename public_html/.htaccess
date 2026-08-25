@@ -1,5 +1,12 @@
 DirectoryIndex index.html
 
+<IfModule mod_headers.c>
+    # The shell and PWA manifest must be revalidated so icon URL changes reach clients.
+    <FilesMatch "\.(html|webmanifest)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

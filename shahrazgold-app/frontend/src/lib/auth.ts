@@ -3,6 +3,7 @@ import { apiErrorMessage, apiRequest, getAccessToken, setAccessToken } from "./a
 import type { User } from "./types";
 
 const AUTH_KEY = "shg_auth_user";
+const PENDING_REGISTRATION_KEY = "shg_pending_registration";
 
 interface ApiUser {
     id: number;
@@ -20,6 +21,19 @@ interface AuthPayload {
     user: ApiUser;
     access_token: string;
     token_type: "Bearer";
+}
+
+interface PendingRegistrationPayload {
+    registration_token: string;
+    mobile: string;
+    expires_in: number;
+    resend_after: number;
+}
+
+interface PendingRegistration {
+    registrationToken: string;
+    mobile: string;
+    resendAfter: number;
 }
 
 type Listener = () => void;
@@ -133,7 +147,7 @@ export interface RegisterInput {
 
 export async function startRegistration(input: RegisterInput): Promise<LoginResult> {
     try {
-        const response = await apiRequest<AuthPayload>("auth/register", {
+        const response = await apiRequest<PendingRegistrationPayload>("auth/register", {
             method: "POST",
             authenticated: false,
             body: JSON.stringify({
@@ -145,21 +159,72 @@ export async function startRegistration(input: RegisterInput): Promise<LoginResu
                 device_name: "web",
             }),
         });
-        storeAuth(response.data);
+        window.sessionStorage.setItem(
+            PENDING_REGISTRATION_KEY,
+            JSON.stringify({
+                registrationToken: response.data.registration_token,
+                mobile: response.data.mobile,
+                resendAfter: response.data.resend_after,
+            } satisfies PendingRegistration),
+        );
         return { ok: true };
     } catch (error) {
         return { ok: false, error: apiErrorMessage(error, "ثبت‌نام ناموفق بود.") };
     }
 }
 
-export function getPendingRegistration(): RegisterInput | null {
-    return null;
+export function getPendingRegistration(): PendingRegistration | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const raw = window.sessionStorage.getItem(PENDING_REGISTRATION_KEY);
+        return raw ? (JSON.parse(raw) as PendingRegistration) : null;
+    } catch {
+        return null;
+    }
 }
 
-export async function verifyOtp(): Promise<LoginResult> {
-    return getCurrentUser()
-        ? { ok: true }
-        : { ok: false, error: "ثبت‌نام را از ابتدا انجام دهید." };
+export async function verifyOtp(code: string): Promise<LoginResult> {
+    const pending = getPendingRegistration();
+    if (!pending) return { ok: false, error: "ثبت‌نام را از ابتدا انجام دهید." };
+
+    try {
+        const response = await apiRequest<AuthPayload>("auth/register/verify", {
+            method: "POST",
+            authenticated: false,
+            body: JSON.stringify({
+                registration_token: pending.registrationToken,
+                code,
+                device_name: "web",
+            }),
+        });
+        storeAuth(response.data);
+        window.sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
+        return { ok: true };
+    } catch (error) {
+        return { ok: false, error: apiErrorMessage(error, "تأیید کد ناموفق بود.") };
+    }
+}
+
+export async function resendRegistrationOtp(): Promise<LoginResult & { resendAfter?: number }> {
+    const pending = getPendingRegistration();
+    if (!pending) return { ok: false, error: "ثبت‌نام را از ابتدا انجام دهید." };
+
+    try {
+        const response = await apiRequest<PendingRegistrationPayload>("auth/register/resend", {
+            method: "POST",
+            authenticated: false,
+            body: JSON.stringify({ registration_token: pending.registrationToken }),
+        });
+        const updated = {
+            registrationToken: response.data.registration_token,
+            mobile: response.data.mobile,
+            resendAfter: response.data.resend_after,
+        } satisfies PendingRegistration;
+        window.sessionStorage.setItem(PENDING_REGISTRATION_KEY, JSON.stringify(updated));
+        return { ok: true, resendAfter: updated.resendAfter };
+    } catch (error) {
+        return { ok: false, error: apiErrorMessage(error, "ارسال مجدد کد ناموفق بود.") };
+    }
 }
 
 export async function logout() {

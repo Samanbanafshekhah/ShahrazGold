@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\KavenegarException;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Auth\AuthenticationException;
@@ -52,6 +53,21 @@ return Application::configure(basePath: dirname(__DIR__))
                 'data' => null,
                 'errors' => null,
             ], 401);
+        });
+
+        $exceptions->render(function (KavenegarException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'ارسال پیامک در حال حاضر ممکن نیست؛ کمی بعد دوباره تلاش کنید.',
+                'data' => null,
+                'errors' => null,
+            ], 503);
         });
 
         $exceptions->render(function (Throwable $e, Request $request) {
