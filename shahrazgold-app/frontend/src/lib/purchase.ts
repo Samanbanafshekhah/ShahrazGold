@@ -144,7 +144,9 @@ export function formatPurchaseMoney(
 
 export function formatPurchaseQuantity(value: number, unit: string): string {
     if (!value) return `${formatNumber(0)} ${unit}`;
-    return `${formatNumber(value, unit === "عدد" || unit === "واحد" ? 3 : 4)} ${unit}`;
+    const maximumFractionDigits =
+        unit === "عدد" && Number.isInteger(value) ? 0 : unit === "عدد" || unit === "واحد" ? 3 : 4;
+    return `${formatNumber(value, maximumFractionDigits)} ${unit}`;
 }
 
 function multiplyDecimalByNumber(decimal: string, multiplier: number): number {

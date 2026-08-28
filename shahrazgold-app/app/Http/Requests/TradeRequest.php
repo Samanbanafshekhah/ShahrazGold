@@ -49,9 +49,6 @@ class TradeRequest extends FormRequest
             if ($product->unit === ProductUnit::Count && $this->string('entry_mode')->value() === EntryMode::Quantity->value && ! preg_match('/^[1-9]\d*$/', (string) $this->input('quantity'))) {
                 $validator->errors()->add('quantity', 'تعداد این محصول باید عدد صحیح باشد.');
             }
-            if ($product->unit === ProductUnit::Count && $this->string('entry_mode')->value() === EntryMode::Amount->value) {
-                $validator->errors()->add('entry_mode', 'برای این محصول فقط ورود بر اساس تعداد مجاز است.');
-            }
         }];
     }
 }

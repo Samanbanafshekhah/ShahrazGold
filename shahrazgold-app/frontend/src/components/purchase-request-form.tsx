@@ -33,6 +33,7 @@ export function PurchaseRequestForm({
     action?: TradeAction;
 }) {
     const actionLabel = action === "buy" ? "خرید" : "فروش";
+    const isCountUnit = product.unit === "عدد";
     const amountId = useId();
     const quantityId = useId();
     const [mode, setMode] = useState<PurchaseMode>("amount");
@@ -54,15 +55,19 @@ export function PurchaseRequestForm({
             ? "مدیر آفلاین است؛ در حال حاضر امکان ثبت درخواست خرید یا فروش وجود ندارد."
             : undefined;
     const activeValue = mode === "amount" ? amount : quantity;
+    const invalidCount = isCountUnit && mode === "quantity" && !/^[1-9]\d*$/.test(quantity);
     const validationError =
-        touched && (!activeValue || invalidInput || !calculation.valid)
-            ? "لطفاً یک مقدار معتبر و بزرگ‌تر از صفر وارد کنید."
+        touched && (!activeValue || invalidInput || invalidCount || !calculation.valid)
+            ? isCountUnit
+                ? "تعداد باید یک عدد صحیح و بزرگ‌تر از صفر باشد."
+                : "لطفاً یک مقدار معتبر و بزرگ‌تر از صفر وارد کنید."
             : undefined;
     const dirty = Boolean(amount || quantity);
     const canSubmit =
         !availabilityError &&
         !managerOfflineError &&
         !invalidInput &&
+        !invalidCount &&
         calculation.valid &&
         !submitting;
 
@@ -167,7 +172,7 @@ export function PurchaseRequestForm({
                             : "text-muted-foreground hover:text-foreground")
                     }
                 >
-                    بر اساس وزن
+                    {isCountUnit ? "بر اساس تعداد" : "بر اساس وزن"}
                 </button>
             </div>
 
@@ -197,20 +202,22 @@ export function PurchaseRequestForm({
                         className="h-11 rounded-xl bg-card text-sm tabular-nums"
                     />
                     <p id={`${amountId}-help`} className="text-[11px] text-muted-foreground">
-                        وزن تقریبی:{" "}
+                        {isCountUnit ? "تعداد تقریبی:" : "وزن تقریبی:"}{" "}
                         <b>{formatPurchaseQuantity(calculation.quantity, product.unit)}</b>
                     </p>
                 </div>
             ) : (
                 <div className="grid gap-2">
                     <Label htmlFor={quantityId} className="text-xs">
-                        {product.unit === "گرم"
-                            ? "وزن به گرم"
-                            : `مقدار ${actionLabel} به ${product.unit}`}
+                        {isCountUnit
+                            ? `تعداد ${actionLabel}`
+                            : product.unit === "گرم"
+                              ? "وزن به گرم"
+                              : `مقدار ${actionLabel} به ${product.unit}`}
                     </Label>
                     <Input
                         id={quantityId}
-                        inputMode="decimal"
+                        inputMode={isCountUnit ? "numeric" : "decimal"}
                         autoFocus
                         value={formatPurchaseInput(quantity)}
                         onBlur={() => setTouched(true)}
@@ -221,7 +228,13 @@ export function PurchaseRequestForm({
                             setSubmitError(undefined);
                             updateDirty(amount, normalized.value);
                         }}
-                        placeholder={product.unit === "گرم" ? "مثلاً ۱.۵" : "مثلاً ۱"}
+                        placeholder={
+                            isCountUnit
+                                ? "مثلاً ۲"
+                                : product.unit === "گرم"
+                                  ? "مثلاً ۱.۵"
+                                  : "مثلاً ۱"
+                        }
                         aria-invalid={Boolean(validationError)}
                         aria-describedby={`${quantityId}-help`}
                         className="h-11 rounded-xl bg-card text-sm tabular-nums"
@@ -298,6 +311,8 @@ function PurchaseSummary({
     total: number;
     action: TradeAction;
 }) {
+    const isCountUnit = product.unit === "عدد";
+
     return (
         <section
             className="rounded-xl border border-border bg-muted/30 p-3"
@@ -314,7 +329,13 @@ function PurchaseSummary({
                     value={formatPurchaseMoney(product.unitPrice, product.priceUnit)}
                 />
                 <SummaryItem
-                    label={mode === "amount" ? "مبلغ واردشده" : "مقدار واردشده"}
+                    label={
+                        mode === "amount"
+                            ? "مبلغ واردشده"
+                            : isCountUnit
+                              ? "تعداد واردشده"
+                              : "مقدار واردشده"
+                    }
                     value={
                         enteredValue &&
                         Number.isFinite(Number(enteredValue)) &&
@@ -326,7 +347,7 @@ function PurchaseSummary({
                     }
                 />
                 <SummaryItem
-                    label="وزن تقریبی"
+                    label={isCountUnit ? "تعداد" : "وزن تقریبی"}
                     value={formatPurchaseQuantity(quantity, product.unit)}
                 />
                 <SummaryItem
