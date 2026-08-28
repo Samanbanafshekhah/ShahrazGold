@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'kavenegar' => [
+        'api_key' => env('KAVENEGAR_API_KEY'),
+        'base_url' => env('KAVENEGAR_BASE_URL', 'https://api.kavenegar.com/v1'),
+        'sender' => env('KAVENEGAR_SENDER'),
+        'otp_template' => env('KAVENEGAR_OTP_TEMPLATE'),
+        'timeout' => (int) env('KAVENEGAR_TIMEOUT', 10),
+        'otp_ttl' => (int) env('KAVENEGAR_OTP_TTL', 300),
+        'otp_resend_after' => (int) env('KAVENEGAR_OTP_RESEND_AFTER', 90),
+        'otp_max_attempts' => (int) env('KAVENEGAR_OTP_MAX_ATTEMPTS', 5),
+    ],
+
 ];

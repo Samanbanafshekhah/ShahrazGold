@@ -41,6 +41,25 @@ composer run dev
 
 جزئیات معماری real-time، تنظیم Redis/Reverb و استقرار production در `docs/REALTIME_PRICES.md` است.
 
+## فعال‌سازی پیامک کاوه‌نگار
+
+در پنل کاوه‌نگار یک الگوی اعتبارسنجی بسازید که شامل `%token` باشد؛ برای نمونه:
+
+```text
+کد تأیید شهرازگلد: %token
+```
+
+پس از تأیید الگو، این مقادیر را در `.env` قرار دهید:
+
+```dotenv
+KAVENEGAR_API_KEY=your-api-key
+KAVENEGAR_OTP_TEMPLATE=shahrazgold-verify
+```
+
+سپس `php artisan config:clear` را اجرا کنید. کلید API فقط در backend استفاده می‌شود و نباید در متغیرهای `VITE_*` یا کد frontend قرار بگیرد.
+
+جریان ثبت‌نام از مسیرهای `POST /api/v1/auth/register`، `POST /api/v1/auth/register/verify` و `POST /api/v1/auth/register/resend` استفاده می‌کند. کد شش‌رقمی پنج دقیقه اعتبار دارد، ارسال مجدد پس از ۹۰ ثانیه ممکن است و پس از پنج تلاش ناموفق باطل می‌شود؛ این مقادیر از متغیرهای نمونه محیط قابل تغییرند.
+
 ## بررسی کیفیت
 
 ```bash

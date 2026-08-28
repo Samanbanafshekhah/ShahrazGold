@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\CreatesDomain;
 use Tests\TestCase;
@@ -18,6 +20,14 @@ class AuthenticationAndAccessTest extends TestCase
     {
         parent::setUp();
         $this->withServerVariables(['REMOTE_ADDR' => '10.99.'.random_int(1, 254).'.'.random_int(1, 254)]);
+        config([
+            'services.kavenegar.api_key' => 'test-api-key',
+            'services.kavenegar.otp_template' => 'shahrazgold-verify',
+        ]);
+        Http::fake(['api.kavenegar.com/*' => Http::response([
+            'return' => ['status' => 200, 'message' => 'تأیید شد'],
+            'entries' => [['messageid' => 123, 'status' => 1]],
+        ])]);
     }
 
     private function registration(array $extra = []): array
@@ -25,16 +35,82 @@ class AuthenticationAndAccessTest extends TestCase
         return array_merge(['first_name' => 'Ali', 'last_name' => 'Ahmadi', 'mobile' => '09123456789', 'email' => 'ali@example.test', 'password' => 'secret123', 'password_confirmation' => 'secret123'], $extra);
     }
 
+    private function registerAndVerify(array $extra = []): void
+    {
+        $started = $this->postJson('/api/v1/auth/register', $this->registration($extra))
+            ->assertAccepted()
+            ->assertJsonStructure(['data' => ['registration_token', 'mobile', 'expires_in', 'resend_after']]);
+        $request = Http::recorded()->last()[0];
+        $this->postJson('/api/v1/auth/register/verify', [
+            'registration_token' => $started->json('data.registration_token'),
+            'code' => $request['token'],
+            'device_name' => 'test',
+        ])->assertCreated();
+    }
+
     public function test_customer_registration_issues_token_and_cannot_choose_admin_role(): void
     {
         $this->postJson('/api/v1/auth/register', $this->registration(['role' => 'admin']))->assertStatus(422);
-        $this->postJson('/api/v1/auth/register', $this->registration())->assertCreated()->assertJsonPath('data.user.role', 'customer')->assertJsonStructure(['data' => ['access_token']]);
+        $started = $this->postJson('/api/v1/auth/register', $this->registration())->assertAccepted();
+        $this->assertDatabaseCount('users', 0);
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.kavenegar.com/v1/test-api-key/verify/lookup.json'
+            && $request['receptor'] === '09123456789'
+            && $request['template'] === 'shahrazgold-verify'
+            && preg_match('/^\d{6}$/', $request['token']) === 1);
+        $request = Http::recorded()->last()[0];
+        $this->postJson('/api/v1/auth/register/verify', [
+            'registration_token' => $started->json('data.registration_token'),
+            'code' => $request['token'],
+        ])->assertCreated()->assertJsonPath('data.user.role', 'customer')->assertJsonStructure(['data' => ['access_token']]);
         $this->assertSame(UserRole::Customer, User::first()->role);
+        $this->assertNotNull(User::first()->mobile_verified_at);
+    }
+
+    public function test_wrong_otp_is_rejected_and_resend_replaces_the_code(): void
+    {
+        $started = $this->postJson('/api/v1/auth/register', $this->registration())->assertAccepted();
+        $registrationToken = $started->json('data.registration_token');
+        $firstCode = Http::recorded()->last()[0]['token'];
+
+        $this->postJson('/api/v1/auth/register/verify', [
+            'registration_token' => $registrationToken,
+            'code' => '000000',
+        ])->assertUnprocessable()->assertJsonValidationErrors('code');
+
+        $this->travel(91)->seconds();
+        $this->postJson('/api/v1/auth/register/resend', [
+            'registration_token' => $registrationToken,
+        ])->assertOk();
+        $secondCode = Http::recorded()->last()[0]['token'];
+        $this->assertNotSame($firstCode, $secondCode);
+
+        $this->postJson('/api/v1/auth/register/verify', [
+            'registration_token' => $registrationToken,
+            'code' => $firstCode,
+        ])->assertUnprocessable();
+        $this->postJson('/api/v1/auth/register/verify', [
+            'registration_token' => $registrationToken,
+            'code' => $secondCode,
+        ])->assertCreated();
+    }
+
+    public function test_kavenegar_error_is_returned_as_a_safe_service_error(): void
+    {
+        Http::swap(new Factory);
+        Http::fake(['api.kavenegar.com/*' => Http::response([
+            'return' => ['status' => 424, 'message' => 'template not found'],
+            'entries' => null,
+        ])]);
+
+        $this->postJson('/api/v1/auth/register', $this->registration())
+            ->assertStatus(503)
+            ->assertJsonPath('message', 'ارسال پیامک در حال حاضر ممکن نیست؛ کمی بعد دوباره تلاش کنید.');
+        $this->assertDatabaseCount('users', 0);
     }
 
     public function test_duplicate_mobile_login_inactive_logout_and_rate_limit(): void
     {
-        $this->postJson('/api/v1/auth/register', $this->registration())->assertCreated();
+        $this->registerAndVerify();
         $this->postJson('/api/v1/auth/register', $this->registration(['email' => 'other@example.test']))->assertStatus(422);
         $login = $this->postJson('/api/v1/auth/login', ['mobile' => '09123456789', 'password' => 'secret123'])->assertOk();
         $token = $login->json('data.access_token');
