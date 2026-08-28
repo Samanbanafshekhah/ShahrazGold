@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\PricingMode;
+use App\Events\PriceUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PriceStepRequest;
 use App\Http\Requests\Admin\ProductRequest;
@@ -49,7 +50,15 @@ class ProductController extends Controller
         $this->assertFormulaSource($data, $registry);
         $old = $product->toArray();
         $product->update($data);
+        $pricePresentationChanged = $product->wasChanged('sell_price_difference_rial');
+        if ($pricePresentationChanged) {
+            $product->increment('price_version');
+        }
         $audit->record('product.updated', $product, $old, $product->fresh()->toArray());
+
+        if ($pricePresentationChanged && ($currentPrice = $product->currentPrice()->first())) {
+            PriceUpdated::dispatch($currentPrice);
+        }
 
         return $this->success((new ProductResource($product->fresh()->load(['category', 'currentPrice'])))->resolve($request), 'Product updated.');
     }

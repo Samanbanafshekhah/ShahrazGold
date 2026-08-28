@@ -10,6 +10,10 @@ use App\Models\User;
 
 final class TradePriceCalculator
 {
+    public function __construct(
+        private readonly CustomerUnitPriceService $customerUnitPrices = new CustomerUnitPriceService,
+    ) {}
+
     public function calculate(Product $product, ProductPrice $price, TradeType $tradeType, EntryMode $entryMode, ?string $quantity, ?string $amountRial, ?User $user = null): array
     {
         $raw = (string) $price->raw_price_rial;
@@ -35,12 +39,15 @@ final class TradePriceCalculator
 
         abort_if(bccomp($final, '0', 0) <= 0, 409, 'ROLE_PRICE_UNAVAILABLE');
 
+        $calculationUnitPrice = $this->customerUnitPrices->forCalculation($product, $final);
+
         if ($entryMode === EntryMode::Quantity) {
             $calculatedQuantity = DecimalMath::quantity((string) $quantity);
-            $total = DecimalMath::roundRial(DecimalMath::mul($final, $calculatedQuantity));
+            $baseTotal = DecimalMath::mul($final, $calculatedQuantity);
+            $total = $this->customerUnitPrices->amount($product, $baseTotal);
         } else {
             $total = (string) $amountRial;
-            $calculatedQuantity = DecimalMath::quantity(DecimalMath::div($total, $final));
+            $calculatedQuantity = DecimalMath::quantity(DecimalMath::div($total, $calculationUnitPrice));
         }
 
         return [
@@ -50,6 +57,7 @@ final class TradePriceCalculator
             'adjustment_amount_rial' => $normalAdjustment,
             'role_price_adjustment_rial' => $roleAdjustment,
             'final_unit_price_rial' => $final,
+            'calculation_unit_price_rial' => DecimalMath::roundRial($calculationUnitPrice),
             'quantity' => $calculatedQuantity,
             'total_amount_rial' => $total,
             'price_effective_at' => $price->effective_at->utc()->toIso8601String(),

@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ProductReorderRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CatalogController extends Controller
 {
@@ -48,16 +51,74 @@ class CatalogController extends Controller
     public function prices(Request $request): JsonResponse
     {
         $this->resolveOptionalUser($request);
-        $products = $this->visibleProducts($request)->orderBy('display_order')->get();
+        $products = $this->visibleProducts($request)->orderBy('display_order')->orderBy('id')->get();
 
         return $this
             ->success($products->map(function ($product) use ($request) {
                 $resource = (new ProductResource($product))->resolve($request);
 
-                return ['product_id' => $product->id, 'symbol' => $product->symbol, 'name' => $product->name, 'raw_price_rial' => $resource['current_price']['raw_price_rial'] ?? null, 'buy_price_rial' => $resource['current_price']['buy_price_rial'] ?? null, 'sell_price_rial' => $resource['current_price']['sell_price_rial'] ?? null, 'is_price_available' => (bool) $product->currentPrice, 'effective_at' => $product->currentPrice?->effective_at->utc()->toIso8601String()];
+                return [
+                    'product_id' => $product->id,
+                    'price_id' => $product->currentPrice?->id,
+                    'symbol' => $product->symbol,
+                    'name' => $product->name,
+                    'raw_price_rial' => $resource['current_price']['raw_price_rial'] ?? null,
+                    'buy_price_rial' => $resource['current_price']['buy_price_rial'] ?? null,
+                    'sell_price_rial' => $resource['current_price']['sell_price_rial'] ?? null,
+                    'sell_price_difference_rial' => (string) $product->sell_price_difference_rial,
+                    'price_version' => $resource['price_version'],
+                    'price_adjustment_version' => $resource['price_adjustment_version'],
+                    'is_price_available' => (bool) $product->currentPrice,
+                    'effective_at' => $product->currentPrice?->effective_at->utc()->toIso8601String(),
+                ];
             }))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
             ->header('Pragma', 'no-cache');
+    }
+
+    public function reorder(ProductReorderRequest $request): JsonResponse
+    {
+        $productIds = array_map('intval', $request->validated('product_ids'));
+        $visibleProductIds = $this->visibleProducts($request)
+            ->orderBy('display_order')
+            ->orderBy('id')
+            ->pluck('products.id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (count($productIds) !== count($visibleProductIds)
+            || array_diff($productIds, $visibleProductIds)
+            || array_diff($visibleProductIds, $productIds)) {
+            throw ValidationException::withMessages([
+                'product_ids' => 'The complete visible product order is required.',
+            ]);
+        }
+
+        DB::transaction(function () use ($productIds): void {
+            $products = Product::query()
+                ->orderBy('display_order')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get(['id', 'display_order']);
+
+            $requestedProducts = array_fill_keys($productIds, true);
+            $nextRequestedIndex = 0;
+            $globalOrder = $products->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+            foreach ($globalOrder as $index => $productId) {
+                if (isset($requestedProducts[$productId])) {
+                    $globalOrder[$index] = $productIds[$nextRequestedIndex++];
+                }
+            }
+
+            abort_unless($nextRequestedIndex === count($productIds), 422, 'INVALID_PRODUCT_ORDER');
+
+            foreach ($globalOrder as $index => $productId) {
+                Product::query()->whereKey($productId)->update(['display_order' => $index + 1]);
+            }
+        }, 3);
+
+        return $this->success(['product_ids' => $productIds], 'Product order updated.');
     }
 
     private function resolveOptionalUser(Request $request): void
@@ -70,6 +131,7 @@ class CatalogController extends Controller
         $user->loadMissing('accessRole.products');
         $request->setUserResolver(fn () => $user);
     }
+
     private function visibleProducts(Request $request)
     {
         $query = Product::with(['category', 'currentPrice'])->where('is_active', true)->whereHas('category', fn ($x) => $x->where('is_active', true));
@@ -81,5 +143,4 @@ class CatalogController extends Controller
 
         return $query;
     }
-
 }

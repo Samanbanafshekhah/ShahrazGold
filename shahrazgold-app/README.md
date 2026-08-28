@@ -31,13 +31,15 @@ docker compose exec app php artisan migrate
 docker compose exec app php artisan db:seed
 ```
 
-سایت و API هر دو از `http://localhost:8080` در دسترس‌اند. برای توسعه زنده فرانت:
+سایت و API هر دو از `http://localhost:8080` در دسترس‌اند. برای توسعه زنده فرانت، بک‌اند، worker و WebSocket server:
 
 ```bash
-npm run dev
+composer run dev
 ```
 
-Vite درخواست‌های `/api` را به `http://127.0.0.1:8080` proxy می‌کند. برای مقصد دیگر، `VITE_API_PROXY_TARGET` را تنظیم کنید.
+در این حالت Laravel روی `http://127.0.0.1:8090`، Vite روی `http://127.0.0.1:8080` و Reverb روی پورت تنظیم‌شده در `.env` اجرا می‌شوند. Vite درخواست‌های `/api` را به Laravel proxy می‌کند. برای مقصد دیگر، `VITE_API_PROXY_TARGET` را تنظیم کنید.
+
+جزئیات معماری real-time، تنظیم Redis/Reverb و استقرار production در `docs/REALTIME_PRICES.md` است.
 
 ## بررسی کیفیت
 

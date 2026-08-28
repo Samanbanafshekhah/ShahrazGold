@@ -29,7 +29,12 @@ done
 if [[ ! -d "$frontend_root/node_modules" ]]; then
     npm --prefix "$frontend_root" ci
 fi
-npm --prefix "$frontend_root" run build:htdocs
+
+VITE_REVERB_APP_KEY="" \
+VITE_REVERB_HOST="" \
+VITE_REVERB_PORT="" \
+VITE_REVERB_SCHEME="" \
+    npm --prefix "$frontend_root" run build:htdocs
 
 if [[ ! -f "$frontend_output/index.html" ]]; then
     echo "Frontend build did not create $frontend_output/index.html" >&2
@@ -51,6 +56,7 @@ rsync -a \
     --exclude='docker/' \
     --exclude='docker-compose.yml' \
     --exclude='Dockerfile' \
+    --exclude='database/*.sqlite*' \
     --exclude='frontend/' \
     --exclude='node_modules/' \
     --exclude='public/' \
@@ -75,7 +81,14 @@ printf '%s\n' \
     '' \
     'این ZIP را در Home Directory هاست cPanel استخراج و Replace/Overwrite را تأیید کنید.' \
     'فایل‌های .env، .htaccess، public_html/index.php، storage و cache داخل بسته نیستند و دست‌نخورده می‌مانند.' \
-    'برای این به‌روزرسانی فرانت، اجرای نصب اولیه یا تغییر تنظیمات دیتابیس لازم نیست.' \
+    '' \
+    'بعد از استخراج:' \
+    '1) در shahrazgold-app/.env از CACHE_STORE=file، SESSION_DRIVER=file، QUEUE_CONNECTION=sync، BROADCAST_CONNECTION=log و SHAHRAZGOLD_PRESENCE_DRIVER=cache استفاده کنید.' \
+    '2) در cPanel > Cron Jobs یک Cron موقت با اجرای Every Minute بسازید و CPANEL_USERNAME را عوض کنید:' \
+    '   /home/CPANEL_USERNAME/shahrazgold-app/deploy-cpanel.php' \
+    '3) پس از یک تا دو دقیقه، در File Manager فایل shahrazgold-app/storage/logs/cpanel-deploy.log را ببینید.' \
+    '   اگر آخرین اجرا exit=0 بود، همان لحظه Cron موقت را حذف کنید.' \
+    'این بسته به Redis، Reverb یا WebSocket نیاز ندارد.' \
     > "$temporary_root/README-UPDATE.fa.txt"
 
 for protected_path in \

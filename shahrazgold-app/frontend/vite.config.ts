@@ -11,10 +11,11 @@ const isHtdocsBuild = process.env.HTDOCS_BUILD === "true";
 export default defineConfig({
     ...(isHtdocsBuild ? { nitro: false } : {}),
     vite: {
+        envDir: "..",
         server: {
             proxy: {
                 "/api": {
-                    target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8080",
+                    target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8090",
                     changeOrigin: true,
                 },
             },

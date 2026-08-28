@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { apiErrorMessage, apiRequest } from "./api";
-import { announcePriceUpdate } from "./price-sync";
 
 export type AdminRequestStatus = "pending" | "approved" | "rejected";
 
@@ -344,7 +343,6 @@ async function writePrice(productId: string, priceToman: number): Promise<void> 
         method: "POST",
         body: JSON.stringify({ raw_price_rial: String(Math.round(priceToman * 10)) }),
     });
-    announcePriceUpdate();
 }
 
 export async function addAdminProduct(
@@ -370,8 +368,6 @@ export async function updateAdminProduct(
 ): Promise<AdminProductMutationResult> {
     const current = prices.find((item) => item.id === id);
     if (!current) return { ok: false, error: "محصول موردنظر پیدا نشد." };
-    const priceDifferenceChanged =
-        current.sellPriceDifferenceToman !== input.sellPriceDifferenceToman;
     try {
         await apiRequest<ApiProduct>(`admin/products/${id}`, {
             method: "PUT",
@@ -381,7 +377,6 @@ export async function updateAdminProduct(
             await writePrice(id, input.price);
         }
         await refreshPrices();
-        if (priceDifferenceChanged) announcePriceUpdate();
         const item = prices.find((product) => product.id === id);
         return item ? { ok: true, item } : { ok: false, error: "محصول بازخوانی نشد." };
     } catch (error) {

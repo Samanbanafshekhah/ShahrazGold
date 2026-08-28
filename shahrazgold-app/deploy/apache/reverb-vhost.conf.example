@@ -1,0 +1,7 @@
+# Requires: a2enmod proxy proxy_http proxy_wstunnel headers
+# Add inside the ShahrazGold TLS VirtualHost. Keep Reverb bound to 127.0.0.1.
+ProxyPreserveHost On
+ProxyPass        "/app/"  "ws://127.0.0.1:8080/app/" retry=0 timeout=75
+ProxyPassReverse "/app/"  "ws://127.0.0.1:8080/app/"
+ProxyPass        "/apps/" "http://127.0.0.1:8080/apps/" retry=0 timeout=15
+ProxyPassReverse "/apps/" "http://127.0.0.1:8080/apps/"

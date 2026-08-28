@@ -39,6 +39,10 @@ class DeployCpanel extends Command
         }
 
         try {
+            if ($this->call('package:discover', ['--ansi' => true]) !== self::SUCCESS) {
+                return self::FAILURE;
+            }
+
             if ($this->call('migrate', ['--force' => true]) !== self::SUCCESS) {
                 return self::FAILURE;
             }

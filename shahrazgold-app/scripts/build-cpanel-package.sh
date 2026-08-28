@@ -29,7 +29,11 @@ done
 if [[ ! -d "$frontend_root/node_modules" ]]; then
     npm --prefix "$frontend_root" ci
 fi
-npm --prefix "$frontend_root" run build:htdocs
+VITE_REVERB_APP_KEY="" \
+VITE_REVERB_HOST="" \
+VITE_REVERB_PORT="" \
+VITE_REVERB_SCHEME="" \
+    npm --prefix "$frontend_root" run build:htdocs
 
 if [[ ! -f "$frontend_output/index.html" ]]; then
     echo "Frontend build did not create $frontend_output/index.html" >&2

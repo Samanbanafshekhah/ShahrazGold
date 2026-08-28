@@ -1,6 +1,6 @@
 # انتشار تک‌هاستی ShahrazGold روی cPanel
 
-این بسته فرانت و API را روی یک دامنه منتشر می‌کند. نیازی به زیردامنه API یا خرید هاست دوم نیست.
+این بسته فرانت و API را روی یک دامنه منتشر می‌کند. نسخه cPanel به Redis یا Reverb نیاز ندارد؛ قیمت‌ها با polling به‌روز می‌شوند و وضعیت آنلاین در cache فایلی نگهداری می‌شود.
 
 ## ساخت بسته
 
@@ -52,7 +52,7 @@ PUBLIC_STORAGE_PATH=/home/CPANEL_USERNAME/public_html/storage
 CORS_ALLOWED_ORIGINS=https://example.com,https://www.example.com
 ```
 
-`APP_ENV=production`، `APP_DEBUG=false`، `CACHE_STORE=file`، `SESSION_DRIVER=file` و `QUEUE_CONNECTION=sync` را حفظ کنید. چون فرانت و API هم‌دامنه‌اند، Base URL فرانت همان `/api/v1` است.
+`APP_ENV=production` و `APP_DEBUG=false` را حفظ کنید. برای هاست اشتراکی از `CACHE_STORE=file`، `SESSION_DRIVER=file`، `QUEUE_CONNECTION=sync`، `BROADCAST_CONNECTION=log` و `SHAHRAZGOLD_PRESENCE_DRIVER=cache` استفاده کنید. چون فرانت و API هم‌دامنه‌اند، Base URL فرانت همان `/api/v1` است.
 
 ## ساخت مدیر اولیه
 

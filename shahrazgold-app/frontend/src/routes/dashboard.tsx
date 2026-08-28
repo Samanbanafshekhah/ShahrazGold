@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { MarketPriceBoard, PriceUpdateStatus } from "@/components/market-price-board";
 import { PurchaseRequestModal } from "@/components/purchase-request-modal";
 import { refreshAssets, refreshTransactions, useAssets, useTransactions } from "@/lib/api-data";
-import { apiRequest } from "@/lib/api";
+import { apiErrorMessage, apiRequest } from "@/lib/api";
 import { useCurrentUser } from "@/lib/auth";
 import { purchaseProductFromAsset, type TradeAction } from "@/lib/purchase";
 import { Info } from "lucide-react";
@@ -51,12 +51,19 @@ function DashboardPage() {
         }
     }
 
-    useEffect(() => {
-        const id = window.setInterval(async () => {
-            await refreshAssets();
-        }, 45_000);
-        return () => window.clearInterval(id);
-    }, []);
+    async function reorderProducts(productIds: number[]) {
+        try {
+            await apiRequest<{ product_ids: number[] }>("products/reorder", {
+                method: "PATCH",
+                body: JSON.stringify({ product_ids: productIds }),
+            });
+            await refreshAssets().catch(() => undefined);
+            toast.success("ترتیب محصولات ذخیره شد.");
+        } catch (error) {
+            toast.error(apiErrorMessage(error, "ذخیره ترتیب محصولات ناموفق بود."));
+            throw error;
+        }
+    }
 
     useEffect(() => {
         let active = true;
@@ -155,14 +162,16 @@ function DashboardPage() {
                 </header>
 
                 {announcement && (
-                    <aside className="mb-4 flex items-start gap-3 rounded-2xl border border-[color:var(--gold)]/50 bg-[color:color-mix(in_oklab,var(--gold-soft)_72%,var(--gold)_28%)] px-4 py-4 shadow-[0_8px_24px_-14px_var(--gold)] sm:mb-6 sm:gap-4 sm:px-6 sm:py-5">
+                    <aside className="mb-3.5 flex items-start gap-2.5 rounded-xl border border-[color:var(--gold)]/50 bg-[color:color-mix(in_oklab,var(--gold-soft)_72%,var(--gold)_28%)] px-3.5 py-3.5 shadow-[0_8px_24px_-14px_var(--gold)] sm:mb-5 sm:gap-3 sm:px-5 sm:py-4">
                         <Info
-                            className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--gold-dark)] sm:h-6 sm:w-6"
+                            className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[color:var(--gold-dark)] sm:h-5 sm:w-5"
                             aria-hidden
                         />
                         <div className="min-w-0 flex-1">
-                            <h2 className="text-sm font-extrabold text-[color:var(--gold-dark)] sm:text-base">اطلاعیه بازار</h2>
-                            <p className="mt-1.5 text-base font-medium leading-8 text-foreground sm:text-lg sm:leading-9">
+                            <h2 className="text-xs font-extrabold text-[color:var(--gold-dark)] sm:text-sm">
+                                اطلاعیه بازار
+                            </h2>
+                            <p className="mt-1 text-sm font-medium leading-6 text-foreground sm:text-base sm:leading-7">
                                 {announcement}
                             </p>
                         </div>
@@ -182,6 +191,8 @@ function DashboardPage() {
                     <div className="mt-2">
                         <MarketPriceBoard
                             assets={assets}
+                            canReorder={user?.canReorderProducts === true}
+                            onReorder={reorderProducts}
                             onTrade={(asset, action, trigger) => {
                                 purchaseTriggerRef.current = trigger;
                                 setSelectedTrade({ assetSymbol: asset.symbol, action });

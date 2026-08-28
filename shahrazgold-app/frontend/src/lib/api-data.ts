@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ApiError, apiErrorMessage, apiRequest } from "./api";
-import { subscribeToPriceUpdates } from "./price-sync";
+import { subscribeToPriceUpdates, type PriceUpdatedPayload } from "./price-sync";
 import type { GoldAsset, Transaction, TransactionStatus } from "./types";
 import type { PurchaseMode, PurchaseProduct, TradeAction } from "./purchase";
 
@@ -11,6 +11,10 @@ interface ApiProduct {
     symbol: string;
     unit: "gram" | "mithqal" | "count";
     category: { id: number; title: string; slug: string } | null;
+    sell_price_difference_rial: string;
+    trade_amount_divisor: string | null;
+    price_version: number;
+    price_adjustment_version: number;
     current_price: {
         id: number;
         raw_price_rial: string;
@@ -25,10 +29,14 @@ interface ApiProduct {
 
 interface ApiMarketPrice {
     product_id: number;
+    price_id: number | null;
+    price_version: number;
+    price_adjustment_version: number;
     symbol: string;
     raw_price_rial: string | null;
     buy_price_rial: string | null;
     sell_price_rial: string | null;
+    sell_price_difference_rial: string;
     is_price_available: boolean;
     effective_at: string | null;
 }
@@ -80,13 +88,18 @@ function categoryName(product: ApiProduct): GoldAsset["category"] {
 }
 
 function mapProduct(product: ApiProduct): GoldAsset {
-    const normalPrice = Number(product.current_price?.raw_price_rial ?? 0);
-    const buyPrice = Number(product.current_price?.buy_price_rial ?? normalPrice);
-    const sellPrice = Number(product.current_price?.sell_price_rial ?? normalPrice);
+    const rawPrice = Number(product.current_price?.raw_price_rial ?? 0);
+    const sellPriceDifference = Number(product.sell_price_difference_rial ?? 0);
+    const normalSellPrice = rawPrice - sellPriceDifference;
+    const buyPrice = Number(product.current_price?.buy_price_rial ?? rawPrice);
+    const sellPrice = Number(product.current_price?.sell_price_rial ?? normalSellPrice);
     // قیمت اصلیِ نمایش‌داده‌شده برای کاربر، قیمت خریدِ نقش اوست.
     const price = buyPrice;
     return {
         productId: product.id,
+        priceId: product.current_price?.id,
+        priceVersion: product.price_version,
+        priceAdjustmentVersion: product.price_adjustment_version,
         symbol: product.symbol,
         title: product.name,
         category: categoryName(product),
@@ -102,7 +115,128 @@ function mapProduct(product: ApiProduct): GoldAsset {
         low: price,
         open: price,
         updatedAt: product.current_price?.effective_at ?? new Date(0).toISOString(),
+        rawPrice,
+        buyPriceAdjustment: buyPrice - rawPrice,
+        sellPriceAdjustment: sellPrice - normalSellPrice,
+        sellPriceDifference,
+        tradeAmountDivisor: Number(product.trade_amount_divisor ?? 1),
     };
+}
+
+function isStalePrice(
+    asset: GoldAsset,
+    priceId: number | undefined,
+    updatedAt: string,
+    priceVersion?: number,
+    priceAdjustmentVersion?: number,
+): boolean {
+    if (asset.priceVersion !== undefined && priceVersion !== undefined) {
+        if (priceVersion < asset.priceVersion) return true;
+        if (priceVersion > asset.priceVersion) return false;
+    }
+    if (asset.priceAdjustmentVersion !== undefined && priceAdjustmentVersion !== undefined) {
+        if (priceAdjustmentVersion < asset.priceAdjustmentVersion) return true;
+        if (priceAdjustmentVersion > asset.priceAdjustmentVersion) return false;
+    }
+    if (asset.priceId !== undefined && priceId !== undefined) {
+        if (priceId < asset.priceId) return true;
+        if (priceId > asset.priceId) return false;
+    }
+    return Date.parse(updatedAt) <= Date.parse(asset.updatedAt);
+}
+
+function preserveNewerPrice(snapshot: GoldAsset, current?: GoldAsset): GoldAsset {
+    if (
+        !current ||
+        !isStalePrice(
+            current,
+            snapshot.priceId,
+            snapshot.updatedAt,
+            snapshot.priceVersion,
+            snapshot.priceAdjustmentVersion,
+        )
+    ) {
+        return snapshot;
+    }
+
+    return {
+        ...snapshot,
+        priceId: current.priceId,
+        priceVersion: current.priceVersion,
+        priceAdjustmentVersion: current.priceAdjustmentVersion,
+        price: current.price,
+        buy: current.buy,
+        sell: current.sell,
+        available: current.available,
+        change: current.change,
+        changePercent: current.changePercent,
+        high: current.high,
+        low: current.low,
+        open: current.open,
+        updatedAt: current.updatedAt,
+        rawPrice: current.rawPrice,
+        buyPriceAdjustment: current.buyPriceAdjustment,
+        sellPriceAdjustment: current.sellPriceAdjustment,
+        sellPriceDifference: current.sellPriceDifference,
+        tradeAmountDivisor: current.tradeAmountDivisor,
+    };
+}
+
+function applyPriceUpdate(update: PriceUpdatedPayload): void {
+    const index = assets.findIndex((asset) => asset.productId === update.product_id);
+    if (index < 0) return;
+
+    const current = assets[index];
+    if (
+        isStalePrice(
+            current,
+            update.price_id,
+            update.updated_at,
+            update.price_version,
+            update.price_adjustment_version ?? undefined,
+        )
+    ) {
+        return;
+    }
+
+    const rawPrice = Number(update.raw_price_rial);
+    const sellPriceDifference = Number(update.sell_price_difference_rial);
+    if (!Number.isFinite(rawPrice) || !Number.isFinite(sellPriceDifference)) return;
+
+    const normalSellPrice = rawPrice - sellPriceDifference;
+    const buyPrice =
+        update.buy_price_rial !== null
+            ? Number(update.buy_price_rial)
+            : rawPrice + (current.buyPriceAdjustment ?? 0);
+    const sellPrice =
+        update.sell_price_rial !== null
+            ? Number(update.sell_price_rial)
+            : normalSellPrice + (current.sellPriceAdjustment ?? 0);
+    if (!Number.isFinite(buyPrice) || !Number.isFinite(sellPrice)) return;
+
+    const difference = buyPrice - current.price;
+    const next = {
+        ...current,
+        priceId: update.price_id,
+        priceVersion: update.price_version,
+        priceAdjustmentVersion: update.price_adjustment_version ?? current.priceAdjustmentVersion,
+        price: buyPrice,
+        buy: current.buy === undefined ? undefined : buyPrice,
+        sell: current.sell === undefined ? undefined : sellPrice,
+        available: true,
+        change: difference,
+        changePercent: current.price === 0 ? 0 : (difference / current.price) * 100,
+        high: Math.max(current.high, buyPrice),
+        low: current.low === 0 ? buyPrice : Math.min(current.low, buyPrice),
+        updatedAt: update.updated_at,
+        rawPrice,
+        buyPriceAdjustment: buyPrice - rawPrice,
+        sellPriceAdjustment: sellPrice - normalSellPrice,
+        sellPriceDifference,
+    };
+
+    assets = [...assets.slice(0, index), next, ...assets.slice(index + 1)];
+    notify(assetListeners);
 }
 
 function mapStatus(status: ApiPurchaseRequest["status"]): TransactionStatus {
@@ -137,7 +271,11 @@ export async function refreshAssets(): Promise<GoldAsset[]> {
         cache: "no-store",
     })
         .then((response) => {
-            assets = response.data.map(mapProduct);
+            const currentByProduct = new Map(assets.map((asset) => [asset.productId, asset]));
+            assets = response.data.map((product) => {
+                const snapshot = mapProduct(product);
+                return preserveNewerPrice(snapshot, currentByProduct.get(snapshot.productId));
+            });
             notify(assetListeners);
             return getAssets();
         })
@@ -168,8 +306,22 @@ export async function refreshAssetPrices(): Promise<GoldAsset[]> {
 
                 const rawPrice = Number(marketPrice.raw_price_rial ?? 0);
                 const buyPrice = Number(marketPrice.buy_price_rial ?? rawPrice);
-                const sellPrice = Number(marketPrice.sell_price_rial ?? rawPrice);
+                const sellPriceDifference = Number(marketPrice.sell_price_difference_rial ?? 0);
+                const normalSellPrice = rawPrice - sellPriceDifference;
+                const sellPrice = Number(marketPrice.sell_price_rial ?? normalSellPrice);
                 const updatedAt = marketPrice.effective_at ?? new Date(0).toISOString();
+                const priceId = marketPrice.price_id ?? undefined;
+                if (
+                    isStalePrice(
+                        asset,
+                        priceId,
+                        updatedAt,
+                        marketPrice.price_version,
+                        marketPrice.price_adjustment_version,
+                    )
+                ) {
+                    return asset;
+                }
                 const priceChanged =
                     asset.price !== buyPrice ||
                     asset.buy !== buyPrice ||
@@ -184,6 +336,9 @@ export async function refreshAssetPrices(): Promise<GoldAsset[]> {
 
                 return {
                     ...asset,
+                    priceId,
+                    priceVersion: marketPrice.price_version,
+                    priceAdjustmentVersion: marketPrice.price_adjustment_version,
                     price: buyPrice,
                     buy: buyPrice,
                     sell: sellPrice,
@@ -193,6 +348,10 @@ export async function refreshAssetPrices(): Promise<GoldAsset[]> {
                     high: Math.max(asset.high, buyPrice),
                     low: asset.low === 0 ? buyPrice : Math.min(asset.low, buyPrice),
                     updatedAt,
+                    rawPrice,
+                    buyPriceAdjustment: buyPrice - rawPrice,
+                    sellPriceAdjustment: sellPrice - normalSellPrice,
+                    sellPriceDifference,
                 };
             });
 
@@ -224,34 +383,47 @@ export function useAssets(): { items: GoldAsset[]; loading: boolean; error?: str
         loading: assets.length === 0,
     }));
     useEffect(() => {
+        let active = true;
+        let unsubscribePriceUpdates = () => undefined;
         const update = () => setState({ items: getAssets(), loading: false });
-        const refreshSilently = () => void refreshAssetPrices().catch(() => undefined);
+        const synchronizeAfterReconnect = () => void refreshAssetPrices().catch(() => undefined);
         const refreshWhenVisible = () => {
-            if (document.visibilityState === "visible") refreshSilently();
+            if (document.visibilityState === "visible") {
+                void refreshAssetPrices().catch(() => undefined);
+            }
         };
 
         assetListeners.add(update);
-        void refreshAssets().catch((error) =>
-            setState({
-                items: getAssets(),
-                loading: false,
-                error: apiErrorMessage(error, "دریافت قیمت‌ها ناموفق بود."),
-            }),
-        );
+        void refreshAssets()
+            .then(() => {
+                if (active) {
+                    unsubscribePriceUpdates = subscribeToPriceUpdates(
+                        applyPriceUpdate,
+                        synchronizeAfterReconnect,
+                    );
+                }
+            })
+            .catch((error) =>
+                setState({
+                    items: getAssets(),
+                    loading: false,
+                    error: apiErrorMessage(error, "دریافت قیمت‌ها ناموفق بود."),
+                }),
+            );
 
         const timer = window.setInterval(refreshWhenVisible, ASSET_REFRESH_INTERVAL_MS);
-        const unsubscribePriceUpdates = subscribeToPriceUpdates(refreshSilently);
-        window.addEventListener("focus", refreshSilently);
-        window.addEventListener("online", refreshSilently);
+        window.addEventListener("focus", refreshWhenVisible);
+        window.addEventListener("online", refreshWhenVisible);
         document.addEventListener("visibilitychange", refreshWhenVisible);
 
         return () => {
+            active = false;
             assetListeners.delete(update);
             window.clearInterval(timer);
-            unsubscribePriceUpdates();
-            window.removeEventListener("focus", refreshSilently);
-            window.removeEventListener("online", refreshSilently);
+            window.removeEventListener("focus", refreshWhenVisible);
+            window.removeEventListener("online", refreshWhenVisible);
             document.removeEventListener("visibilitychange", refreshWhenVisible);
+            unsubscribePriceUpdates();
         };
     }, []);
     return state;

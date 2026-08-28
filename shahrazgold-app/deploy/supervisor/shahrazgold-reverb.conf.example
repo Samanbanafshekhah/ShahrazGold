@@ -1,0 +1,17 @@
+[program:shahrazgold-reverb]
+process_name=%(program_name)s
+directory=/var/www/shahrazgold-app
+command=/usr/bin/php artisan reverb:start --host=127.0.0.1 --port=8080 --no-interaction
+user=www-data
+autostart=true
+autorestart=true
+startsecs=5
+startretries=5
+stopasgroup=true
+killasgroup=true
+stopwaitsecs=15
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/shahrazgold-reverb.log
+stdout_logfile_maxbytes=20MB
+stdout_logfile_backups=5
+environment=APP_ENV="production"

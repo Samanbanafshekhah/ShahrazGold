@@ -8,7 +8,7 @@ return [
         'rounding' => 'nearest_rial',
     ],
     'presence' => [
-        'driver' => env('SHAHRAZGOLD_PRESENCE_DRIVER', 'redis'),
+        'driver' => env('SHAHRAZGOLD_PRESENCE_DRIVER', 'cache'),
         'ttl_seconds' => (int) env('SHAHRAZGOLD_PRESENCE_TTL', 90),
         'key_prefix' => env('SHAHRAZGOLD_PRESENCE_PREFIX', 'presence:user:'),
     ],

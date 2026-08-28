@@ -2,6 +2,9 @@ export type AssetCategory = "melted" | "gold" | "coin";
 
 export interface GoldAsset {
     productId?: number;
+    priceId?: number;
+    priceVersion?: number;
+    priceAdjustmentVersion?: number;
     symbol: string;
     title: string;
     category: AssetCategory;
@@ -17,6 +20,11 @@ export interface GoldAsset {
     low: number;
     open: number;
     updatedAt: string; // ISO
+    rawPrice?: number;
+    buyPriceAdjustment?: number;
+    sellPriceAdjustment?: number;
+    sellPriceDifference?: number;
+    tradeAmountDivisor?: number;
 }
 
 export type TransactionType = "buy" | "sell";
@@ -48,5 +56,7 @@ export interface User {
     verified: boolean;
     createdAt: string;
     role?: "customer" | "admin";
+    roleId?: number;
     isActive?: boolean;
+    canReorderProducts?: boolean;
 }

@@ -7,9 +7,10 @@ use App\Enums\ProductUnit;
 use App\Events\PurchaseRequestApproved;
 use App\Events\PurchaseRequestCreated;
 use App\Events\PurchaseRequestRejected;
-use App\Models\ProductPrice;
 use App\Models\AppSetting;
+use App\Models\ProductPrice;
 use App\Models\PurchaseRequest;
+use App\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
@@ -70,6 +71,84 @@ class TradeAndPurchaseRequestTest extends TestCase
         $this->getJson('/api/v1/purchase-requests/'.$created->json('data.id'))->assertForbidden();
         $new = ProductPrice::create(['product_id' => $product->id, 'raw_price_rial' => '110000000', 'pricing_mode' => PricingMode::Manual, 'effective_at' => now()->addSecond()]);
         $this->postJson('/api/v1/purchase-requests', $this->payload($product, $price))->assertStatus(409)->assertJsonPath('message', 'PRICE_CHANGED')->assertJsonPath('data.preview.product_price_id', $new->id);
+    }
+
+    public function test_product_three_keeps_displayed_unit_prices_and_converts_totals_once(): void
+    {
+        AppSetting::setManagerOnline(true);
+        $product = $this->product([
+            'id' => 3,
+            'name' => 'آبشده نقدی',
+            'slug' => 'abshodeh-nagdi',
+            'symbol' => 'ABSHODEH',
+            'sell_price_difference_rial' => 500_000,
+        ]);
+        $price = ProductPrice::create([
+            'product_id' => $product->id,
+            'raw_price_rial' => '40000000',
+            'pricing_mode' => PricingMode::Manual,
+            'effective_at' => now()->utc(),
+        ]);
+        $customerRole = Role::query()->where('slug', 'customer')->firstOrFail();
+        $customerRole->products()->attach($product->id, ['can_access' => true, 'can_buy' => true]);
+        $customer = $this->customer(['role_id' => $customerRole->id]);
+        Sanctum::actingAs($customer);
+
+        $this->getJson('/api/v1/products/abshodeh-nagdi')
+            ->assertOk()
+            ->assertJsonPath('data.current_price.raw_price_rial', '40000000')
+            ->assertJsonPath('data.current_price.buy_price_rial', '40000000')
+            ->assertJsonPath('data.current_price.sell_price_rial', '39500000')
+            ->assertJsonPath('data.trade_amount_divisor', '4.33183');
+
+        $this->postJson('/api/v1/trade/preview', [
+            'product_id' => 3,
+            'trade_type' => 'customer_buy',
+            'entry_mode' => 'quantity',
+            'quantity' => '2',
+            'final_unit_price_rial' => '1',
+        ])->assertUnprocessable();
+
+        $this->postJson('/api/v1/trade/preview', [
+            'product_id' => 3,
+            'trade_type' => 'customer_buy',
+            'entry_mode' => 'quantity',
+            'quantity' => '2',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.final_unit_price_rial', '40000000')
+            ->assertJsonPath('data.calculation_unit_price_rial', '9233973')
+            ->assertJsonPath('data.total_amount_rial', '18467945');
+
+        $buy = $this->postJson('/api/v1/purchase-requests', $this->payload($product, $price, [
+            'quantity' => '2',
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.final_unit_price_rial', '40000000')
+            ->assertJsonPath('data.total_amount_rial', '18467945');
+
+        $sell = $this->postJson('/api/v1/purchase-requests', $this->payload($product, $price, [
+            'trade_type' => 'customer_sell',
+            'quantity' => '2',
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.final_unit_price_rial', '39500000')
+            ->assertJsonPath('data.total_amount_rial', '18237096');
+
+        $this->assertDatabaseHas('purchase_requests', [
+            'id' => $buy->json('data.id'),
+            'product_id' => 3,
+            'raw_unit_price_rial' => '40000000',
+            'final_unit_price_rial' => '40000000',
+            'total_amount_rial' => '18467945',
+        ]);
+        $this->assertDatabaseHas('purchase_requests', [
+            'id' => $sell->json('data.id'),
+            'product_id' => 3,
+            'raw_unit_price_rial' => '40000000',
+            'final_unit_price_rial' => '39500000',
+            'total_amount_rial' => '18237096',
+        ]);
     }
 
     public function test_buy_and_sell_are_rejected_when_manager_is_offline(): void

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Events\PriceUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RolePriceAdjustmentRequest;
 use App\Http\Requests\Admin\RoleRequest;
@@ -75,11 +76,29 @@ class RoleController extends Controller
                         'sell_price_adjustment_rial' => $adjustment['sell_price_adjustment_rial'],
                     ],
                 ]);
+                DB::table('role_product_permissions')
+                    ->where('role_id', $role->id)
+                    ->where('product_id', $adjustment['product_id'])
+                    ->increment('price_version');
             }
         });
 
         $new = $this->priceAdjustmentData($role);
         $audit->record('role.price_adjustments_updated', $role, $old, $new);
+
+        collect($new['products'])
+            ->whereIn('product_id', collect($request->validated('adjustments'))->pluck('product_id'))
+            ->each(function (array $price) use ($products, $role): void {
+                $currentPrice = $products->get($price['product_id'])?->currentPrice;
+                if ($currentPrice) {
+                    PriceUpdated::dispatch(
+                        $currentPrice,
+                        $role->id,
+                        $price['role_buy_price_rial'],
+                        $price['role_sell_price_rial'],
+                    );
+                }
+            });
 
         return $this->success($new, 'Role price adjustments updated.');
     }

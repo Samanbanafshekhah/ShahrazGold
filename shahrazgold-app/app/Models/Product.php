@@ -35,6 +35,7 @@ class Product extends Model
             'sell_price_difference_rial' => 'integer',
             'display_order' => 'integer',
             'price_step_rial' => 'integer',
+            'price_version' => 'integer',
         ];
     }
 

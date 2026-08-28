@@ -11,7 +11,9 @@ interface ApiUser {
     mobile: string;
     email?: string | null;
     role: "customer" | "admin";
+    role_id?: number | null;
     is_active: boolean;
+    can_reorder_products?: boolean;
     mobile_verified_at?: string | null;
     created_at?: string | null;
 }
@@ -40,7 +42,9 @@ function mapUser(user: ApiUser): User {
         verified: Boolean(user.mobile_verified_at),
         createdAt: user.created_at ?? new Date().toISOString(),
         role: user.role,
+        roleId: user.role_id ?? undefined,
         isActive: user.is_active,
+        canReorderProducts: user.can_reorder_products === true,
     };
 }
 

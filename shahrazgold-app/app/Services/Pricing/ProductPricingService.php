@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProductPrice;
 use App\Services\AuditService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 final class ProductPricingService
 {
@@ -39,6 +40,13 @@ final class ProductPricingService
                         'created_by' => $actorId,
                         'effective_at' => $effectiveAt,
                     ]);
+                    $product->increment('price_version');
+                    DB::afterCommit(fn () => Log::channel('realtime')->info('price.changed', [
+                        'product_id' => $product->id,
+                        'price_id' => $productPrice->id,
+                        'source' => 'market_quote',
+                        'timestamp' => $effectiveAt->toISOString(),
+                    ]));
                     PriceUpdated::dispatch($productPrice);
                 });
 
@@ -53,12 +61,19 @@ final class ProductPricingService
         abort_unless($product->pricing_mode === PricingMode::Manual, 409, 'Manual price is only allowed for manual products.');
 
         return DB::transaction(function () use ($product, $priceRial, $actorId) {
-            Product::query()->lockForUpdate()->findOrFail($product->id);
-            $price = $product->prices()->create([
+            $locked = Product::query()->lockForUpdate()->findOrFail($product->id);
+            $price = $locked->prices()->create([
                 'raw_price_rial' => $priceRial, 'pricing_mode' => PricingMode::Manual,
                 'created_by' => $actorId, 'effective_at' => now()->utc(),
             ]);
+            $locked->increment('price_version');
             $this->audit->record('product_price.created', $price, null, $price->toArray(), $actorId);
+            DB::afterCommit(fn () => Log::channel('realtime')->info('price.changed', [
+                'product_id' => $locked->id,
+                'price_id' => $price->id,
+                'source' => 'manual',
+                'timestamp' => $price->effective_at->utc()->toISOString(),
+            ]));
             PriceUpdated::dispatch($price);
 
             return $price;

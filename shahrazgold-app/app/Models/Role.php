@@ -31,6 +31,7 @@ class Role extends Model
                 'can_buy',
                 'buy_price_adjustment_rial',
                 'sell_price_adjustment_rial',
+                'price_version',
             ])->withTimestamps();
     }
 

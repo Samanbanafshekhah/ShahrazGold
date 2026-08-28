@@ -14,6 +14,8 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    private const PRODUCT_ORDER_MANAGER_MOBILE = '09122853808';
+
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
@@ -50,6 +52,12 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin || $this->accessRole?->slug === UserRole::Admin->value;
+    }
+
+    public function canReorderProducts(): bool
+    {
+        return $this->mobile === self::PRODUCT_ORDER_MANAGER_MOBILE
+            || (app()->environment('local') && (int) $this->getKey() === 1);
     }
 
     public function canBuyProduct(int $productId): bool

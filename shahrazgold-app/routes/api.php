@@ -42,6 +42,7 @@ Route::prefix('v1')->group(function () {
     Route::get('manager-status', [ManagerStatusController::class, 'show']);
 
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
+        Route::patch('products/reorder', [CatalogController::class, 'reorder']);
         Route::post('trade/preview', [TradeController::class, 'preview'])->middleware('throttle:trade-preview');
         Route::get('purchase-requests', [PurchaseRequestController::class, 'index']);
         Route::post('purchase-requests', [PurchaseRequestController::class, 'store'])->middleware('throttle:trade-create');

@@ -73,6 +73,14 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'realtime' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/realtime.log'),
+            'level' => env('REALTIME_LOG_LEVEL', 'info'),
+            'days' => env('REALTIME_LOG_DAYS', 7),
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

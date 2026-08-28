@@ -11,6 +11,7 @@ export interface PurchaseProduct {
     title: string;
     unit: string;
     unitPrice: number;
+    amountDivisor: number;
     priceUnit: "تومان" | "دلار";
     updatedAt: string;
     change?: number;
@@ -36,6 +37,7 @@ export function purchaseProductFromAsset(
         title: asset.title,
         unit: asset.unit,
         unitPrice: asset.currency === "IRR" ? (price ?? 0) / 10 : (price ?? 0),
+        amountDivisor: asset.tradeAmountDivisor ?? 1,
         priceUnit: asset.currency === "IRR" ? "تومان" : "دلار",
         updatedAt: asset.updatedAt,
         change: asset.change,
@@ -66,12 +68,18 @@ export function calculatePurchase(
     amount: string,
     quantity: string,
     unitPrice: number,
+    amountDivisor = 1,
 ): PurchaseCalculation {
     const numericAmount = parsePositivePurchaseNumber(amount);
     const numericQuantity = parsePositivePurchaseNumber(quantity);
-    const calculatedQuantity = mode === "amount" ? numericAmount / unitPrice : numericQuantity;
+    const calculatedQuantity =
+        mode === "amount"
+            ? (numericAmount * validAmountDivisor(amountDivisor)) / unitPrice
+            : numericQuantity;
     const calculatedTotal =
-        mode === "quantity" ? multiplyDecimalByNumber(quantity, unitPrice) : numericAmount;
+        mode === "quantity"
+            ? multiplyDecimalByNumber(quantity, unitPrice) / validAmountDivisor(amountDivisor)
+            : numericAmount;
     const valid =
         Number.isFinite(calculatedQuantity) &&
         Number.isFinite(calculatedTotal) &&
@@ -84,6 +92,10 @@ export function calculatePurchase(
         total: valid ? calculatedTotal : 0,
         valid,
     };
+}
+
+function validAmountDivisor(divisor: number): number {
+    return Number.isFinite(divisor) && divisor > 0 ? divisor : 1;
 }
 
 export function parsePositivePurchaseNumber(value: string): number {

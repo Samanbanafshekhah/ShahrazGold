@@ -8,6 +8,10 @@ services:
       args:
         APP_UID: ${APP_UID:-1000}
         APP_GID: ${APP_GID:-1000}
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST:-localhost}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT:-8080}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-http}
     image: shahrazgold-backend-app:local
     restart: unless-stopped
     working_dir: /var/www/html
@@ -40,10 +44,33 @@ services:
     depends_on:
       app:
         condition: service_healthy
+      reverb:
+        condition: service_healthy
     networks:
       - backend
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/up || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  reverb:
+    image: shahrazgold-backend-app:local
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080", "--no-interaction"]
+    env_file:
+      - .env
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "php -r '$$socket = @fsockopen(\"127.0.0.1\", 8080); if (!$$socket) { exit(1); } fclose($$socket);'"]
       interval: 10s
       timeout: 5s
       retries: 5

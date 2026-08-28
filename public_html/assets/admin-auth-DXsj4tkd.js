@@ -1,0 +1,1 @@
+import{c as e,i as t,l as n,r,t as i}from"./auth-B3dglfzd.js";async function a(e,n){let a=await r(e,n);return a.ok?i()?.role===`admin`?{ok:!0}:(await t(),{ok:!1,error:`این حساب دسترسی مدیریت ندارد.`}):a}async function o(){await t()}function s(){let t=n(),r=e();return{authenticated:t?.role===`admin`,ready:r}}export{o as n,s as r,a as t};

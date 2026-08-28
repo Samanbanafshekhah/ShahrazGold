@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Pricing\CustomerUnitPriceService;
 use App\Services\Pricing\DecimalMath;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,6 +17,8 @@ class ProductResource extends JsonResource
             ? DecimalMath::sub($rawPrice, (string) $this->sell_price_difference_rial, 0)
             : null;
         $roleAdjustments = $request->user()?->priceAdjustmentsFor($this->id) ?? ['buy' => '0', 'sell' => '0'];
+        $roleProduct = $request->user()?->accessRole?->products?->firstWhere('id', $this->id);
+        $customerUnitPrices = app(CustomerUnitPriceService::class);
         $buyPrice = $rawPrice ? DecimalMath::add($rawPrice, $roleAdjustments['buy'], 0) : null;
         $sellPrice = $normalSellPrice ? DecimalMath::add($normalSellPrice, $roleAdjustments['sell'], 0) : null;
 
@@ -26,6 +29,9 @@ class ProductResource extends JsonResource
             'current_price' => $price ? ['id' => $price->id, 'raw_price_rial' => $rawPrice, 'buy_price_rial' => $buyPrice, 'sell_price_rial' => $sellPrice, 'effective_at' => $price->effective_at->utc()->toIso8601String()] : null,
             'is_price_available' => (bool) $price, 'is_buyable' => $this->is_buyable, 'is_sellable' => $this->is_sellable, 'is_active' => $this->is_active,
             'sell_price_difference_rial' => (string) $this->sell_price_difference_rial,
+            'trade_amount_divisor' => $customerUnitPrices->divisor($this->resource),
+            'price_version' => (int) $this->price_version,
+            'price_adjustment_version' => (int) ($roleProduct?->pivot?->price_version ?? 0),
             'price_source_id' => $this->when($request->user()?->isAdmin(), $this->price_source_id),
             'pricing_formula_key' => $this->when($request->user()?->isAdmin(), $this->pricing_formula_key),
             'price_step_rial' => $this->when($request->user()?->isAdmin(), (string) $this->price_step_rial),

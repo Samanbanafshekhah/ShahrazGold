@@ -6,8 +6,8 @@ use App\Events\AnnouncementPublished;
 use App\Models\AuditLog;
 use App\Services\AuditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Redis;
 use Laravel\Sanctum\Sanctum;
 use Tests\CreatesDomain;
 use Tests\TestCase;
@@ -28,17 +28,17 @@ class OperationsTest extends TestCase
         Event::assertDispatched(AnnouncementPublished::class);
     }
 
-    public function test_presence_uses_redis_ttl_and_admin_can_list_and_count(): void
+    public function test_presence_uses_cache_ttl_and_admin_can_list_and_count(): void
     {
         $customer = $this->customer();
-        Redis::del('presence:online');
-        Redis::del(config('shahrazgold.presence.key_prefix').$customer->id);
+        $presenceKey = config('shahrazgold.presence.key_prefix').$customer->id;
+        Cache::forget($presenceKey);
         Sanctum::actingAs($customer);
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.42'])
             ->postJson('/api/v1/presence/heartbeat')
             ->assertOk()
             ->assertJsonPath('data.ttl_seconds', 90);
-        $this->assertGreaterThan(0, Redis::ttl(config('shahrazgold.presence.key_prefix').$customer->id));
+        $this->assertNotNull(Cache::get($presenceKey));
         Sanctum::actingAs($this->admin());
         $this->getJson('/api/v1/admin/presence')
             ->assertOk()
