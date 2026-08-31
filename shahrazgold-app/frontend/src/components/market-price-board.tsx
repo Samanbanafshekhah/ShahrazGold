@@ -401,7 +401,7 @@ function PriceCell({
                     : `ثبت درخواست ${label} ${assetTitle}`
             }
             className={
-                "min-w-0 rounded-lg px-1 py-2 text-center transition-colors enabled:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed sm:px-2 md:text-start " +
+                "min-w-0 rounded-[2px] px-1 py-2 text-center transition-colors enabled:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed sm:px-2 md:text-start " +
                 (value === undefined || tradeDisabled
                     ? "bg-muted/55"
                     : tone === "buy"
