@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Events\AnnouncementPublished;
+use App\Events\AnnouncementUnpublished;
 use App\Models\AuditLog;
 use App\Services\AuditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,7 +19,7 @@ class OperationsTest extends TestCase
 
     public function test_announcement_publish_public_window_and_event(): void
     {
-        Event::fake([AnnouncementPublished::class]);
+        Event::fake([AnnouncementPublished::class, AnnouncementUnpublished::class]);
         $admin = $this->admin();
         Sanctum::actingAs($admin);
         $id = $this->postJson('/api/v1/admin/announcements', ['title' => 'بازار', 'body' => 'فعال', 'starts_at' => now()->subMinute()->toIso8601String(), 'ends_at' => now()->addHour()->toIso8601String()])->assertCreated()->json('data.id');
@@ -26,6 +27,9 @@ class OperationsTest extends TestCase
         $this->postJson("/api/v1/admin/announcements/$id/publish")->assertOk();
         $this->getJson('/api/v1/announcements/current')->assertJsonPath('data.0.body', 'فعال');
         Event::assertDispatched(AnnouncementPublished::class);
+        $this->postJson("/api/v1/admin/announcements/$id/unpublish")->assertOk();
+        $this->getJson('/api/v1/announcements/current')->assertJsonCount(0, 'data');
+        Event::assertDispatched(AnnouncementUnpublished::class, fn ($event) => $event->announcementId === $id);
     }
 
     public function test_presence_uses_cache_ttl_and_admin_can_list_and_count(): void

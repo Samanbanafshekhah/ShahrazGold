@@ -7,6 +7,7 @@ use App\Events\PriceUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PriceStepRequest;
 use App\Http\Requests\Admin\ProductRequest;
+use App\Http\Requests\Admin\TradeAvailabilityRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\MarketPriceSource;
 use App\Models\Product;
@@ -72,6 +73,27 @@ class ProductController extends Controller
         return $this->success(
             (new ProductResource($product->fresh()->load(['category', 'currentPrice'])))->resolve($request),
             'Product price step updated.'
+        );
+    }
+
+    public function updateTradeAvailability(TradeAvailabilityRequest $request, Product $product, AuditService $audit): JsonResponse
+    {
+        $old = $product->only(['buy_disabled', 'sell_disabled']);
+        $product->fill($request->validated());
+
+        if ($product->isDirty(['buy_disabled', 'sell_disabled'])) {
+            $product->price_version = (int) $product->price_version + 1;
+            $product->save();
+            $audit->record('product.trade_availability_updated', $product, $old, $product->fresh()->only(['buy_disabled', 'sell_disabled']));
+
+            if ($currentPrice = $product->currentPrice()->first()) {
+                PriceUpdated::dispatch($currentPrice);
+            }
+        }
+
+        return $this->success(
+            (new ProductResource($product->fresh()->load(['category', 'currentPrice'])))->resolve($request),
+            'Trade availability updated.',
         );
     }
 

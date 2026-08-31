@@ -51,6 +51,11 @@ class CatalogAndPricingTest extends TestCase
         $derived = $this->derivedProduct();
         Sanctum::actingAs($admin);
         $this->postJson("/api/v1/admin/products/{$manual->id}/prices", ['raw_price_rial' => '90000000'])->assertCreated();
+        $this->getJson("/api/v1/admin/products/{$manual->id}")
+            ->assertOk()
+            ->assertJsonPath('data.current_price.buy_price_rial', '90000000')
+            ->assertJsonPath('data.current_price.sell_price_rial', '90000000')
+            ->assertJsonPath('data.final_amount_multiplier', '1.01');
         $this->postJson("/api/v1/admin/products/{$derived->id}/prices", ['raw_price_rial' => '90000000'])->assertStatus(409);
         $empty = $this->product(['slug' => 'no-price', 'symbol' => 'NOPRICE']);
         $this->getJson('/api/v1/products/no-price')->assertOk()->assertJsonPath('data.current_price', null)->assertJsonPath('data.is_price_available', false);
@@ -81,5 +86,51 @@ class CatalogAndPricingTest extends TestCase
 
         $this->assertDatabaseHas('products', ['id' => $product->id, 'price_step_rial' => 500_000]);
         $this->assertDatabaseHas('products', ['id' => $otherProduct->id, 'price_step_rial' => 10_000]);
+    }
+
+    public function test_admin_can_persist_buy_and_sell_availability_independently(): void
+    {
+        $product = $this->product();
+        Sanctum::actingAs($this->admin());
+
+        $this->getJson("/api/v1/admin/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('data.buy_disabled', false)
+            ->assertJsonPath('data.sell_disabled', false);
+
+        $this->patchJson("/api/v1/admin/products/{$product->id}/trade-availability", [
+            'buy_disabled' => true,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.buy_disabled', true)
+            ->assertJsonPath('data.sell_disabled', false);
+
+        $this->patchJson("/api/v1/admin/products/{$product->id}/trade-availability", [
+            'sell_disabled' => true,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.buy_disabled', true)
+            ->assertJsonPath('data.sell_disabled', true);
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'buy_disabled' => true,
+            'sell_disabled' => true,
+        ]);
+
+        $this->getJson("/api/v1/admin/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('data.buy_disabled', true)
+            ->assertJsonPath('data.sell_disabled', true);
+
+        $this->patchJson("/api/v1/admin/products/{$product->id}/trade-availability", [
+            'buy_disabled' => false,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.buy_disabled', false)
+            ->assertJsonPath('data.sell_disabled', true);
+
+        $this->patchJson("/api/v1/admin/products/{$product->id}/trade-availability", [])
+            ->assertUnprocessable();
     }
 }

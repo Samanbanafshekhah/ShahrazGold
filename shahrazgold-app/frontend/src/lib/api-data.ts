@@ -13,6 +13,7 @@ interface ApiProduct {
     category: { id: number; title: string; slug: string } | null;
     sell_price_difference_rial: string;
     trade_amount_divisor: string | null;
+    final_amount_multiplier: string;
     price_version: number;
     price_adjustment_version: number;
     current_price: {
@@ -24,7 +25,9 @@ interface ApiProduct {
     } | null;
     is_price_available: boolean;
     is_buyable: boolean;
+    buy_disabled: boolean;
     is_sellable: boolean;
+    sell_disabled: boolean;
 }
 
 interface ApiMarketPrice {
@@ -37,6 +40,8 @@ interface ApiMarketPrice {
     buy_price_rial: string | null;
     sell_price_rial: string | null;
     sell_price_difference_rial: string;
+    buy_disabled: boolean;
+    sell_disabled: boolean;
     is_price_available: boolean;
     effective_at: string | null;
 }
@@ -120,6 +125,9 @@ function mapProduct(product: ApiProduct): GoldAsset {
         sellPriceAdjustment: sellPrice - normalSellPrice,
         sellPriceDifference,
         tradeAmountDivisor: Number(product.trade_amount_divisor ?? 1),
+        finalAmountMultiplier: Number(product.final_amount_multiplier ?? 1),
+        buyDisabled: Boolean(product.buy_disabled),
+        sellDisabled: Boolean(product.sell_disabled),
     };
 }
 
@@ -179,6 +187,9 @@ function preserveNewerPrice(snapshot: GoldAsset, current?: GoldAsset): GoldAsset
         sellPriceAdjustment: current.sellPriceAdjustment,
         sellPriceDifference: current.sellPriceDifference,
         tradeAmountDivisor: current.tradeAmountDivisor,
+        finalAmountMultiplier: current.finalAmountMultiplier,
+        buyDisabled: current.buyDisabled,
+        sellDisabled: current.sellDisabled,
     };
 }
 
@@ -196,6 +207,13 @@ function applyPriceUpdate(update: PriceUpdatedPayload): void {
             update.price_adjustment_version ?? undefined,
         )
     ) {
+        return;
+    }
+
+    // Generic price broadcasts cannot contain role-specific final prices.
+    // Refresh them from the backend instead of reproducing pricing rules here.
+    if (update.buy_price_rial === null || update.sell_price_rial === null) {
+        void refreshAssetPrices().catch(() => undefined);
         return;
     }
 
@@ -326,6 +344,8 @@ export async function refreshAssetPrices(): Promise<GoldAsset[]> {
                     asset.price !== buyPrice ||
                     asset.buy !== buyPrice ||
                     asset.sell !== sellPrice ||
+                    asset.buyDisabled !== marketPrice.buy_disabled ||
+                    asset.sellDisabled !== marketPrice.sell_disabled ||
                     asset.available !== marketPrice.is_price_available ||
                     asset.updatedAt !== updatedAt;
 
@@ -352,6 +372,8 @@ export async function refreshAssetPrices(): Promise<GoldAsset[]> {
                     buyPriceAdjustment: buyPrice - rawPrice,
                     sellPriceAdjustment: sellPrice - normalSellPrice,
                     sellPriceDifference,
+                    buyDisabled: marketPrice.buy_disabled,
+                    sellDisabled: marketPrice.sell_disabled,
                 };
             });
 
@@ -541,6 +563,10 @@ export async function submitPurchase(input: {
         notify(transactionListeners);
         return transaction;
     } catch (error) {
+        if (error instanceof ApiError && error.message.includes("در حال حاضر بسته است")) {
+            void refreshAssetPrices().catch(() => undefined);
+            throw error;
+        }
         if (
             error instanceof ApiError &&
             (error.message === "MANAGER_OFFLINE" || error.message.includes("مدیر آفلاین"))

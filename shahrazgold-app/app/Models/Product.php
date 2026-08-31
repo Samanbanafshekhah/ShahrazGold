@@ -18,7 +18,7 @@ class Product extends Model
 
     protected $fillable = [
         'product_category_id', 'name', 'slug', 'symbol', 'description', 'icon', 'image_path', 'unit',
-        'pricing_mode', 'price_source_id', 'pricing_formula_key', 'is_active', 'is_buyable', 'is_sellable',
+        'pricing_mode', 'price_source_id', 'pricing_formula_key', 'is_active', 'is_buyable', 'buy_disabled', 'is_sellable', 'sell_disabled',
         'display_order', 'price_step_rial', 'trade_adjustment_enabled', 'trade_adjustment_percent', 'sell_price_difference_rial',
     ];
 
@@ -29,7 +29,9 @@ class Product extends Model
             'pricing_mode' => PricingMode::class,
             'is_active' => 'boolean',
             'is_buyable' => 'boolean',
+            'buy_disabled' => 'boolean',
             'is_sellable' => 'boolean',
+            'sell_disabled' => 'boolean',
             'trade_adjustment_enabled' => 'boolean',
             'trade_adjustment_percent' => 'decimal:4',
             'sell_price_difference_rial' => 'integer',

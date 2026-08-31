@@ -66,6 +66,8 @@ class CatalogController extends Controller
                     'buy_price_rial' => $resource['current_price']['buy_price_rial'] ?? null,
                     'sell_price_rial' => $resource['current_price']['sell_price_rial'] ?? null,
                     'sell_price_difference_rial' => (string) $product->sell_price_difference_rial,
+                    'buy_disabled' => (bool) $product->buy_disabled,
+                    'sell_disabled' => (bool) $product->sell_disabled,
                     'price_version' => $resource['price_version'],
                     'price_adjustment_version' => $resource['price_adjustment_version'],
                     'is_price_available' => (bool) $product->currentPrice,

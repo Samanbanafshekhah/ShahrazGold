@@ -12,3 +12,5 @@ Broadcast::channel('prices.role.{roleId}', function (User $user, int $roleId): b
 
     return $user->accessRole?->is_active === true;
 });
+
+Broadcast::channel('announcements', fn (User $user): bool => $user->is_active && ! $user->isAdmin());

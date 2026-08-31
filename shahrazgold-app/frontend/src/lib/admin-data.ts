@@ -12,6 +12,8 @@ export interface AdminPriceItem {
     previousPrice: number;
     priceStep: number;
     sellPriceDifferenceToman: number;
+    buyDisabled: boolean;
+    sellDisabled: boolean;
     updatedAt: string;
     recentlyUpdated?: boolean;
     symbol?: string;
@@ -71,6 +73,8 @@ interface ApiProduct {
     pricing_formula_key?: string | null;
     price_step_rial?: string;
     sell_price_difference_rial?: string;
+    buy_disabled: boolean;
+    sell_disabled: boolean;
     category: { id: number; title: string; slug: string } | null;
     current_price: { raw_price_rial: string; effective_at: string } | null;
 }
@@ -157,6 +161,8 @@ function mapProduct(product: ApiProduct): AdminPriceItem {
         previousPrice: price,
         priceStep: Number(product.price_step_rial ?? 10_000) / 10,
         sellPriceDifferenceToman: Number(product.sell_price_difference_rial ?? 0) / 10,
+        buyDisabled: Boolean(product.buy_disabled),
+        sellDisabled: Boolean(product.sell_disabled),
         updatedAt: product.current_price?.effective_at ?? new Date(0).toISOString(),
         symbol: product.symbol,
         slug: product.slug,
@@ -400,6 +406,61 @@ export async function updateAdminPriceStep(id: string, priceStepToman: number): 
         body: JSON.stringify({ price_step_rial: Math.round(priceStepToman * 10) }),
     });
     await refreshPrices();
+}
+
+export async function updateAdminTradeAvailability(
+    id: string,
+    change: { buyDisabled?: boolean; sellDisabled?: boolean },
+): Promise<void> {
+    const previous = prices.find((item) => item.id === id);
+    if (!previous) throw new Error("محصول موردنظر پیدا نشد.");
+
+    syncProducts(
+        prices.map((item) =>
+            item.id === id
+                ? {
+                      ...item,
+                      buyDisabled: change.buyDisabled ?? item.buyDisabled,
+                      sellDisabled: change.sellDisabled ?? item.sellDisabled,
+                  }
+                : item,
+        ),
+    );
+
+    try {
+        const response = await apiRequest<ApiProduct>(`admin/products/${id}/trade-availability`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                ...(change.buyDisabled !== undefined
+                    ? { buy_disabled: change.buyDisabled }
+                    : {}),
+                ...(change.sellDisabled !== undefined
+                    ? { sell_disabled: change.sellDisabled }
+                    : {}),
+            }),
+        });
+        const updated = mapProduct(response.data);
+        syncProducts(prices.map((item) => (item.id === id ? updated : item)));
+    } catch (error) {
+        syncProducts(
+            prices.map((item) =>
+                item.id === id
+                    ? {
+                          ...item,
+                          buyDisabled:
+                              change.buyDisabled !== undefined
+                                  ? previous.buyDisabled
+                                  : item.buyDisabled,
+                          sellDisabled:
+                              change.sellDisabled !== undefined
+                                  ? previous.sellDisabled
+                                  : item.sellDisabled,
+                      }
+                    : item,
+            ),
+        );
+        throw new Error(apiErrorMessage(error, "به‌روزرسانی وضعیت معامله ناموفق بود."));
+    }
 }
 
 export async function updateAdminPrice(id: string, newPrice: number): Promise<void> {

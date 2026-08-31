@@ -21,10 +21,16 @@ interface PriceSubscriber {
     onReconnect: () => void;
 }
 
+interface AnnouncementSubscriber {
+    onChange: () => void;
+    onReconnect: () => void;
+}
+
 type ReverbEcho = Echo<"reverb">;
 type PusherStateChange = { previous: string; current: string };
 
 const subscribers = new Set<PriceSubscriber>();
+const announcementSubscribers = new Set<AnnouncementSubscriber>();
 let echo: ReverbEcho | null = null;
 let subscribedChannel: string | null = null;
 let activeToken: string | null = null;
@@ -63,6 +69,7 @@ function websocketOptions(token: string) {
 
 function disconnect(): void {
     if (echo && subscribedChannel) echo.leave(subscribedChannel);
+    echo?.leave("announcements");
     echo?.disconnect();
     echo = null;
     subscribedChannel = null;
@@ -75,7 +82,7 @@ function connect(): void {
     const token = getAccessToken();
     const channelName = websocketChannel();
     const appKey = import.meta.env.VITE_REVERB_APP_KEY;
-    if (!token || !channelName || !appKey) {
+    if (!token || (!channelName && announcementSubscribers.size === 0) || !appKey) {
         disconnect();
         return;
     }
@@ -89,17 +96,55 @@ function connect(): void {
 
     echo.connector.pusher.connection.bind("state_change", ({ current }: PusherStateChange) => {
         if (current !== "connected") return;
-        if (hasConnected) subscribers.forEach(({ onReconnect }) => onReconnect());
+        if (hasConnected) {
+            subscribers.forEach(({ onReconnect }) => onReconnect());
+            announcementSubscribers.forEach(({ onReconnect }) => onReconnect());
+        }
         hasConnected = true;
     });
 
-    echo.private(channelName)
-        .listen(".price.updated", (payload: PriceUpdatedPayload) => {
-            subscribers.forEach(({ onUpdate }) => onUpdate(payload));
+    if (channelName) {
+        echo.private(channelName)
+            .listen(".price.updated", (payload: PriceUpdatedPayload) => {
+                subscribers.forEach(({ onUpdate }) => onUpdate(payload));
+            })
+            .error((error: unknown) => {
+                if (import.meta.env.DEV) console.warn("Price channel subscription failed", error);
+            });
+    }
+
+    echo.private("announcements")
+        .listen(".announcement.changed", () => {
+            announcementSubscribers.forEach(({ onChange }) => onChange());
         })
         .error((error: unknown) => {
-            if (import.meta.env.DEV) console.warn("Price channel subscription failed", error);
+            if (import.meta.env.DEV)
+                console.warn("Announcement channel subscription failed", error);
         });
+}
+
+function hasSubscribers(): boolean {
+    return subscribers.size > 0 || announcementSubscribers.size > 0;
+}
+
+function prepareConnection(): void {
+    if (disconnectTimer !== null) {
+        window.clearTimeout(disconnectTimer);
+        disconnectTimer = null;
+    }
+    unsubscribeAuth ??= subscribeToAuth(connect);
+    connect();
+}
+
+function disconnectWhenUnused(): void {
+    if (hasSubscribers()) return;
+    disconnectTimer = window.setTimeout(() => {
+        disconnectTimer = null;
+        if (hasSubscribers()) return;
+        unsubscribeAuth?.();
+        unsubscribeAuth = null;
+        disconnect();
+    }, 0);
 }
 
 export function subscribeToPriceUpdates(
@@ -107,26 +152,29 @@ export function subscribeToPriceUpdates(
     onReconnect: () => void,
 ): () => void {
     if (typeof window === "undefined") return () => undefined;
-    if (disconnectTimer !== null) {
-        window.clearTimeout(disconnectTimer);
-        disconnectTimer = null;
-    }
 
     const subscriber = { onUpdate, onReconnect };
     subscribers.add(subscriber);
-    unsubscribeAuth ??= subscribeToAuth(connect);
-    connect();
+    prepareConnection();
 
     return () => {
         subscribers.delete(subscriber);
-        if (subscribers.size > 0) return;
-        disconnectTimer = window.setTimeout(() => {
-            disconnectTimer = null;
-            if (subscribers.size === 0) {
-                unsubscribeAuth?.();
-                unsubscribeAuth = null;
-                disconnect();
-            }
-        }, 0);
+        disconnectWhenUnused();
+    };
+}
+
+export function subscribeToAnnouncementUpdates(
+    onChange: () => void,
+    onReconnect: () => void,
+): () => void {
+    if (typeof window === "undefined") return () => undefined;
+
+    const subscriber = { onChange, onReconnect };
+    announcementSubscribers.add(subscriber);
+    prepareConnection();
+
+    return () => {
+        announcementSubscribers.delete(subscriber);
+        disconnectWhenUnused();
     };
 }

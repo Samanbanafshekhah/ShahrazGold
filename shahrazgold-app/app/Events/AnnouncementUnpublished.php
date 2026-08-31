@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-use App\Models\MarketAnnouncement;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -10,11 +9,11 @@ use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class AnnouncementPublished implements ShouldBroadcastNow, ShouldDispatchAfterCommit
+class AnnouncementUnpublished implements ShouldBroadcastNow, ShouldDispatchAfterCommit
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public MarketAnnouncement $announcement) {}
+    public function __construct(public int $announcementId) {}
 
     public function broadcastOn(): PrivateChannel
     {
@@ -30,8 +29,8 @@ class AnnouncementPublished implements ShouldBroadcastNow, ShouldDispatchAfterCo
     public function broadcastWith(): array
     {
         return [
-            'announcement_id' => $this->announcement->id,
-            'action' => 'published',
+            'announcement_id' => $this->announcementId,
+            'action' => 'unpublished',
             'updated_at' => now()->utc()->toISOString(),
         ];
     }

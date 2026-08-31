@@ -46,8 +46,23 @@ export function PurchaseRequestForm({
     const [submitError, setSubmitError] = useState<string>();
     const [managerOnline, setManagerOnline] = useState<boolean | null>(null);
     const calculation = useMemo(
-        () => calculatePurchase(mode, amount, quantity, product.unitPrice, product.amountDivisor),
-        [amount, mode, product.amountDivisor, product.unitPrice, quantity],
+        () =>
+            calculatePurchase(
+                mode,
+                amount,
+                quantity,
+                product.unitPrice,
+                product.amountDivisor,
+                product.finalAmountMultiplier,
+            ),
+        [
+            amount,
+            mode,
+            product.amountDivisor,
+            product.finalAmountMultiplier,
+            product.unitPrice,
+            quantity,
+        ],
     );
     const availabilityError = getPurchaseAvailabilityError(product, action);
     const managerOfflineError =

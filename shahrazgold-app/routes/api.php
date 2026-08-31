@@ -60,6 +60,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('users/{user}/status', [UserController::class, 'status']);
             Route::apiResource('categories', AdminCategoryController::class);
             Route::patch('products/{product}/price-step', [AdminProductController::class, 'updatePriceStep']);
+            Route::patch('products/{product}/trade-availability', [AdminProductController::class, 'updateTradeAvailability']);
             Route::apiResource('products', AdminProductController::class);
             Route::get('products/{product}/prices', [ProductPriceController::class, 'index']);
             Route::get('products/{product}/prices/current', [ProductPriceController::class, 'current']);

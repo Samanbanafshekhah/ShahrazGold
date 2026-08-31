@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
     Select,
     SelectContent,
@@ -50,6 +51,7 @@ import {
     refreshAllAdminPrices,
     updateAdminProduct,
     updateAdminPriceStep,
+    updateAdminTradeAvailability,
     useAdminPrices,
     type AdminPriceItem,
 } from "@/lib/admin-data";
@@ -68,6 +70,7 @@ type ProductForm = {
 };
 
 type ProductFormErrors = Partial<Record<keyof ProductForm, string>>;
+type TradeSide = "buy" | "sell";
 
 const BASE_PRICE_STEP = 1_000;
 
@@ -78,6 +81,10 @@ const EMPTY_PRODUCT_FORM: ProductForm = {
     price: "",
     sellPriceDifferenceToman: "",
 };
+
+function availabilityKey(productId: string, side: TradeSide): string {
+    return `${productId}:${side}`;
+}
 
 function parsePersianNumber(raw: string): number {
     const normalized = raw
@@ -128,6 +135,9 @@ function PricesPage() {
     const [deleteTarget, setDeleteTarget] = useState<AdminPriceItem | null>(null);
     const [adjustTarget, setAdjustTarget] = useState<AdminPriceItem | null>(null);
     const [adjustmentSteps, setAdjustmentSteps] = useState("1");
+    const [availabilityPending, setAvailabilityPending] = useState<Set<string>>(
+        () => new Set(),
+    );
 
     function openCreateProduct() {
         const defaultCategory =
@@ -260,6 +270,34 @@ function PricesPage() {
         setDeleteTarget(null);
     }
 
+    async function changeTradeAvailability(
+        item: AdminPriceItem,
+        side: TradeSide,
+        disabled: boolean,
+    ) {
+        const key = availabilityKey(item.id, side);
+        if (availabilityPending.has(key)) return;
+
+        setAvailabilityPending((current) => new Set(current).add(key));
+        try {
+            await updateAdminTradeAvailability(
+                item.id,
+                side === "buy" ? { buyDisabled: disabled } : { sellDisabled: disabled },
+            );
+            toast.success(`وضعیت ${side === "buy" ? "خرید" : "فروش"} بروزرسانی شد.`);
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : "به‌روزرسانی وضعیت معامله ناموفق بود.",
+            );
+        } finally {
+            setAvailabilityPending((current) => {
+                const next = new Set(current);
+                next.delete(key);
+                return next;
+            });
+        }
+    }
+
     return (
         <AdminPage
             title="مدیریت محصولات و قیمت‌ها"
@@ -303,6 +341,8 @@ function PricesPage() {
                             onEdit={openEditProduct}
                             onPriceStepSetting={openPriceStepSetting}
                             onDelete={setDeleteTarget}
+                            availabilityPending={availabilityPending}
+                            onAvailabilityChange={changeTradeAvailability}
                         />
                     ))}
                 </div>
@@ -636,6 +676,8 @@ function AdminPriceSection({
     onEdit,
     onPriceStepSetting,
     onDelete,
+    availabilityPending,
+    onAvailabilityChange,
 }: {
     title: string;
     description: string;
@@ -645,6 +687,12 @@ function AdminPriceSection({
     onEdit: (item: AdminPriceItem) => void;
     onPriceStepSetting: (item: AdminPriceItem) => void;
     onDelete: (item: AdminPriceItem) => void;
+    availabilityPending: Set<string>;
+    onAvailabilityChange: (
+        item: AdminPriceItem,
+        side: TradeSide,
+        disabled: boolean,
+    ) => void;
 }) {
     return (
         <section className="overflow-hidden border-y border-border bg-card sm:rounded-2xl sm:border sm:shadow-elegant">
@@ -684,6 +732,8 @@ function AdminPriceSection({
                         onEdit={onEdit}
                         onPriceStepSetting={onPriceStepSetting}
                         onDelete={onDelete}
+                        availabilityPending={availabilityPending}
+                        onAvailabilityChange={onAvailabilityChange}
                     />
                 ))}
             </div>
@@ -698,6 +748,8 @@ function AdminPriceRow({
     onEdit,
     onPriceStepSetting,
     onDelete,
+    availabilityPending,
+    onAvailabilityChange,
 }: {
     item: AdminPriceItem;
     onIncrease: (item: AdminPriceItem) => void;
@@ -705,6 +757,12 @@ function AdminPriceRow({
     onEdit: (item: AdminPriceItem) => void;
     onPriceStepSetting: (item: AdminPriceItem) => void;
     onDelete: (item: AdminPriceItem) => void;
+    availabilityPending: Set<string>;
+    onAvailabilityChange: (
+        item: AdminPriceItem,
+        side: TradeSide,
+        disabled: boolean,
+    ) => void;
 }) {
     const meta = getPriceMeta(item);
     const decreaseDisabled = item.price <= item.priceStep;
@@ -720,18 +778,30 @@ function AdminPriceRow({
                         هر {item.unit} · گام {formatNumber(item.priceStep)}
                     </p>
                 </div>
-                <PriceActionButton
+                <TradePriceControl
                     tone="increase"
                     label={`قیمت خرید ${item.title}: ${formatNumber(item.price)} تومان؛ افزایش یک گام`}
                     value={item.price}
                     onClick={() => onIncrease(item)}
+                    tradeLabel="بستن خرید"
+                    tradeDisabled={item.buyDisabled}
+                    switchPending={availabilityPending.has(availabilityKey(item.id, "buy"))}
+                    onTradeDisabledChange={(disabled) =>
+                        onAvailabilityChange(item, "buy", disabled)
+                    }
                 />
-                <PriceActionButton
+                <TradePriceControl
                     tone="decrease"
                     label={`قیمت فروش ${item.title}: ${formatNumber(Math.max(0, item.price - item.sellPriceDifferenceToman))} تومان؛ کاهش یک گام`}
                     value={Math.max(0, item.price - item.sellPriceDifferenceToman)}
                     disabled={decreaseDisabled}
                     onClick={() => onDecrease(item)}
+                    tradeLabel="بستن فروش"
+                    tradeDisabled={item.sellDisabled}
+                    switchPending={availabilityPending.has(availabilityKey(item.id, "sell"))}
+                    onTradeDisabledChange={(disabled) =>
+                        onAvailabilityChange(item, "sell", disabled)
+                    }
                 />
                 <div className="hidden xl:block">
                     <PriceDifference meta={meta} />
@@ -833,6 +903,35 @@ function AdminPriceRow({
     );
 }
 
+function TradePriceControl({
+    tradeLabel,
+    tradeDisabled,
+    switchPending,
+    onTradeDisabledChange,
+    ...priceProps
+}: React.ComponentProps<typeof PriceActionButton> & {
+    tradeLabel: string;
+    tradeDisabled: boolean;
+    switchPending: boolean;
+    onTradeDisabledChange: (disabled: boolean) => void;
+}) {
+    return (
+        <div className="min-w-0 space-y-1.5">
+            <PriceActionButton {...priceProps} />
+            <label className="flex min-h-8 cursor-pointer items-center justify-center gap-1.5 text-[11px] font-extrabold text-muted-foreground sm:text-xs xl:justify-start">
+                <Switch
+                    checked={tradeDisabled}
+                    disabled={switchPending}
+                    onCheckedChange={onTradeDisabledChange}
+                    aria-label={tradeLabel}
+                    className="data-[state=checked]:!bg-negative"
+                />
+                <span className={tradeDisabled ? "text-negative" : undefined}>{tradeLabel}</span>
+            </label>
+        </div>
+    );
+}
+
 function PriceActionButton({
     tone,
     label,
@@ -855,7 +954,7 @@ function PriceActionButton({
             aria-label={label}
             title={label}
             className={
-                "min-w-0 rounded-lg px-1 py-2 text-center transition-colors enabled:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed sm:px-2 xl:text-start " +
+                "w-full min-w-0 rounded-lg px-1 py-2 text-center transition-colors enabled:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed sm:px-2 xl:text-start " +
                 (increase ? "bg-positive-soft" : "bg-negative-soft disabled:bg-muted/55")
             }
         >

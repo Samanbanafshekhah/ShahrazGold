@@ -194,6 +194,12 @@ function DashboardPage() {
                             canReorder={user?.canReorderProducts === true}
                             onReorder={reorderProducts}
                             onTrade={(asset, action, trigger) => {
+                                if (
+                                    (action === "buy" && asset.buyDisabled) ||
+                                    (action === "sell" && asset.sellDisabled)
+                                ) {
+                                    return;
+                                }
                                 purchaseTriggerRef.current = trigger;
                                 setSelectedTrade({ assetSymbol: asset.symbol, action });
                             }}

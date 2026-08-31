@@ -25,6 +25,9 @@ export interface GoldAsset {
     sellPriceAdjustment?: number;
     sellPriceDifference?: number;
     tradeAmountDivisor?: number;
+    finalAmountMultiplier?: number;
+    buyDisabled?: boolean;
+    sellDisabled?: boolean;
 }
 
 export type TransactionType = "buy" | "sell";

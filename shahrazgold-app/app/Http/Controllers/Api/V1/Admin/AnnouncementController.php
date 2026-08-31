@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\AnnouncementStatus;
 use App\Events\AnnouncementPublished;
+use App\Events\AnnouncementUnpublished;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AnnouncementRequest;
 use App\Models\MarketAnnouncement;
@@ -44,7 +45,12 @@ class AnnouncementController extends Controller
 
     public function destroy(MarketAnnouncement $announcement): JsonResponse
     {
+        $wasPublished = $announcement->status === AnnouncementStatus::Published;
+        $announcementId = $announcement->id;
         $announcement->delete();
+        if ($wasPublished) {
+            AnnouncementUnpublished::dispatch($announcementId);
+        }
 
         return $this->success(null, 'Announcement deleted.');
     }
@@ -64,6 +70,7 @@ class AnnouncementController extends Controller
         $old = $announcement->toArray();
         $announcement->update(['status' => AnnouncementStatus::Draft, 'published_at' => null, 'updated_by' => $r->user()->id]);
         $audit->record('announcement.unpublished', $announcement, $old, $announcement->fresh()->toArray());
+        AnnouncementUnpublished::dispatch($announcement->id);
 
         return $this->success($this->data($announcement->fresh()), 'Announcement unpublished.');
     }

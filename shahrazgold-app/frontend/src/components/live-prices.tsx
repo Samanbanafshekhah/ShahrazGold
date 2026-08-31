@@ -391,6 +391,18 @@ function TradeButton({
     loginRequired?: boolean;
     onTrade: (asset: LivePriceAsset) => void;
 }) {
+    if (asset.buyDisabled) {
+        return (
+            <Button
+                type="button"
+                disabled
+                className={`h-10 rounded-xl px-4 text-xs font-extrabold ${className}`}
+            >
+                خرید بسته است
+            </Button>
+        );
+    }
+
     if (loginRequired) {
         return (
             <Button
@@ -427,11 +439,14 @@ function BuyOrderPanel({ asset, onClose }: { asset: LivePriceAsset; onClose: () 
             title: asset.name,
             unit: asset.unit ?? unit,
             unitPrice: asset.buyPrice,
+            amountDivisor: asset.amountDivisor ?? 1,
+            finalAmountMultiplier: asset.finalAmountMultiplier ?? 1,
             priceUnit: "تومان",
             updatedAt: asset.updatedAt ?? new Date(0).toISOString(),
             change: asset.dailyChange,
             changePercent: asset.dailyChange,
-            available: asset.buyPrice > 0,
+            available: asset.buyPrice > 0 && !asset.buyDisabled,
+            tradeDisabled: asset.buyDisabled === true,
         }),
         [asset, unit],
     );
@@ -462,6 +477,10 @@ function toLivePriceAsset(asset: GoldAsset): LivePriceAsset {
         icon: asset.symbol.slice(0, 2),
         unit: asset.unit,
         updatedAt: asset.updatedAt,
+        amountDivisor: asset.tradeAmountDivisor,
+        finalAmountMultiplier: asset.finalAmountMultiplier,
+        buyDisabled: asset.buyDisabled,
+        sellDisabled: asset.sellDisabled,
     };
 }
 

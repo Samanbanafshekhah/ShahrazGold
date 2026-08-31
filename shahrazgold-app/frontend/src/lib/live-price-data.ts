@@ -5,6 +5,10 @@ export interface LivePriceAsset {
   productId?: number;
   unit?: string;
   updatedAt?: string;
+  amountDivisor?: number;
+  finalAmountMultiplier?: number;
+  buyDisabled?: boolean;
+  sellDisabled?: boolean;
   name: string;
   symbol?: string;
   category: Exclude<LivePriceCategory, "all">;

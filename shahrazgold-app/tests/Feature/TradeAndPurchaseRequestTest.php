@@ -11,10 +11,12 @@ use App\Models\AppSetting;
 use App\Models\ProductPrice;
 use App\Models\PurchaseRequest;
 use App\Models\Role;
+use App\Services\PurchaseRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\CreatesDomain;
 use Tests\TestCase;
 
@@ -41,10 +43,10 @@ class TradeAndPurchaseRequestTest extends TestCase
         Sanctum::actingAs($this->customer());
         [$product] = $this->pricedProduct();
         $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1.25', 'raw_unit_price_rial' => '1'])->assertStatus(422);
-        $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1.25'])->assertOk()->assertJsonPath('data.raw_unit_price_rial', '100000000')->assertJsonPath('data.final_unit_price_rial', '101000000')->assertJsonPath('data.total_amount_rial', '126250000');
-        $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_sell', 'entry_mode' => 'amount', 'amount_rial' => '198000000'])->assertOk()->assertJsonPath('data.final_unit_price_rial', '99000000')->assertJsonPath('data.quantity', '2');
+        $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1.25'])->assertOk()->assertJsonPath('data.raw_unit_price_rial', '100000000')->assertJsonPath('data.final_unit_price_rial', '100000000')->assertJsonPath('data.total_amount_rial', '126250000');
+        $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_sell', 'entry_mode' => 'amount', 'amount_rial' => '198000000'])->assertOk()->assertJsonPath('data.final_unit_price_rial', '100000000')->assertJsonPath('data.total_amount_rial', '199980000')->assertJsonPath('data.quantity', '1.98');
         $product->update(['trade_adjustment_enabled' => false]);
-        $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1'])->assertJsonPath('data.final_unit_price_rial', '100000000');
+        $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1'])->assertJsonPath('data.final_unit_price_rial', '100000000')->assertJsonPath('data.total_amount_rial', '101000000');
     }
 
     public function test_count_accepts_amount_or_integer_quantity_but_rejects_fractional_quantity(): void
@@ -52,7 +54,7 @@ class TradeAndPurchaseRequestTest extends TestCase
         Sanctum::actingAs($this->customer());
         [$count] = $this->pricedProduct(['unit' => ProductUnit::Count]);
         $this->postJson('/api/v1/trade/preview', ['product_id' => $count->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1.5'])->assertStatus(422);
-        $this->postJson('/api/v1/trade/preview', ['product_id' => $count->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'amount', 'amount_rial' => '100000000'])->assertOk()->assertJsonPath('data.quantity', '0.990099');
+        $this->postJson('/api/v1/trade/preview', ['product_id' => $count->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'amount', 'amount_rial' => '100000000'])->assertOk()->assertJsonPath('data.quantity', '1')->assertJsonPath('data.total_amount_rial', '101000000');
         [$weight] = $this->pricedProduct(['slug' => 'weight', 'symbol' => 'WEIGHT', 'unit' => ProductUnit::Gram]);
         $this->postJson('/api/v1/trade/preview', ['product_id' => $weight->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '0.123456'])->assertOk()->assertJsonPath('data.quantity', '0.123456');
     }
@@ -63,7 +65,7 @@ class TradeAndPurchaseRequestTest extends TestCase
         Sanctum::actingAs($customer);
         [$product,$price] = $this->pricedProduct();
         $payload = $this->payload($product, $price);
-        $created = $this->postJson('/api/v1/purchase-requests', $payload)->assertCreated()->assertJsonPath('data.raw_unit_price_rial', '100000000')->assertJsonPath('data.trade_adjustment_percent', '1.0000');
+        $created = $this->postJson('/api/v1/purchase-requests', $payload)->assertCreated()->assertJsonPath('data.raw_unit_price_rial', '100000000')->assertJsonPath('data.trade_adjustment_percent', '1.0000')->assertJsonPath('data.final_unit_price_rial', '100000000')->assertJsonPath('data.total_amount_rial', '126250000');
         $this->postJson('/api/v1/purchase-requests', $payload)->assertCreated();
         $this->assertSame(1, PurchaseRequest::count());
         $other = $this->customer();
@@ -163,6 +165,77 @@ class TradeAndPurchaseRequestTest extends TestCase
         $this->postJson('/api/v1/purchase-requests', $this->payload($product, $price, ['trade_type' => 'customer_sell']))
             ->assertStatus(409)
             ->assertJsonPath('message', 'MANAGER_OFFLINE');
+        $this->assertSame(0, PurchaseRequest::count());
+    }
+
+    public function test_buy_and_sell_availability_are_independent_and_enforced_by_the_api(): void
+    {
+        $customer = $this->customer();
+        Sanctum::actingAs($customer);
+        [$product, $price] = $this->pricedProduct();
+        $preview = fn (string $tradeType) => $this->postJson('/api/v1/trade/preview', [
+            'product_id' => $product->id,
+            'trade_type' => $tradeType,
+            'entry_mode' => 'quantity',
+            'quantity' => '1',
+        ]);
+
+        $preview('customer_buy')->assertOk();
+        $preview('customer_sell')->assertOk();
+
+        $product->update(['buy_disabled' => true, 'sell_disabled' => false]);
+        $preview('customer_buy')
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.trade_type.0', 'خرید این محصول در حال حاضر بسته است.');
+        $preview('customer_sell')->assertOk();
+
+        $product->update(['buy_disabled' => false, 'sell_disabled' => true]);
+        $preview('customer_buy')->assertOk();
+        $preview('customer_sell')
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.trade_type.0', 'فروش این محصول در حال حاضر بسته است.');
+
+        $product->update(['buy_disabled' => true, 'sell_disabled' => true]);
+        $preview('customer_buy')->assertUnprocessable();
+        $preview('customer_sell')->assertUnprocessable();
+
+        $this->postJson('/api/v1/purchase-requests', $this->payload($product, $price))
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.trade_type.0', 'خرید این محصول در حال حاضر بسته است.');
+        $this->postJson('/api/v1/purchase-requests', $this->payload($product, $price, [
+            'trade_type' => 'customer_sell',
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.trade_type.0', 'فروش این محصول در حال حاضر بسته است.');
+        $this->assertSame(0, PurchaseRequest::count());
+    }
+
+    public function test_creation_service_rechecks_availability_after_a_preview_was_opened(): void
+    {
+        $customer = $this->customer();
+        Sanctum::actingAs($customer);
+        [$product, $price] = $this->pricedProduct();
+
+        $this->postJson('/api/v1/trade/preview', [
+            'product_id' => $product->id,
+            'trade_type' => 'customer_buy',
+            'entry_mode' => 'quantity',
+            'quantity' => '1',
+        ])->assertOk();
+
+        $product->update(['buy_disabled' => true]);
+
+        try {
+            $this->app->make(PurchaseRequestService::class)->create(
+                $customer,
+                $this->payload($product, $price),
+            );
+            $this->fail('A closed buy request was created.');
+        } catch (HttpException $exception) {
+            $this->assertSame(409, $exception->getStatusCode());
+            $this->assertSame('خرید این محصول در حال حاضر بسته است.', $exception->getMessage());
+        }
+
         $this->assertSame(0, PurchaseRequest::count());
     }
 

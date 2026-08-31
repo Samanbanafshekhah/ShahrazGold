@@ -49,6 +49,43 @@ class PricingTest extends TestCase
     }
 
     #[Test]
+    public function product_one_adds_one_percent_to_final_buy_and_sell_amounts_only(): void
+    {
+        $target = new Product([
+            'unit' => ProductUnit::Gram,
+            'pricing_mode' => PricingMode::Manual,
+            'sell_price_difference_rial' => 1_000_000,
+        ]);
+        $target->setAttribute('id', 1);
+        $other = clone $target;
+        $other->setAttribute('id', 2);
+        $price = new ProductPrice([
+            'raw_price_rial' => '10000000',
+            'pricing_mode' => PricingMode::Manual,
+            'effective_at' => now(),
+        ]);
+        $calculator = new TradePriceCalculator;
+
+        $targetBuy = $calculator->calculate($target, $price, TradeType::CustomerBuy, EntryMode::Quantity, '1', null);
+        $targetSell = $calculator->calculate($target, $price, TradeType::CustomerSell, EntryMode::Quantity, '1', null);
+        $otherBuy = $calculator->calculate($other, $price, TradeType::CustomerBuy, EntryMode::Quantity, '1', null);
+        $otherSell = $calculator->calculate($other, $price, TradeType::CustomerSell, EntryMode::Quantity, '1', null);
+
+        $this->assertSame('10000000', $targetBuy['final_unit_price_rial']);
+        $this->assertSame('9000000', $targetSell['final_unit_price_rial']);
+        $this->assertSame('10000000', $otherBuy['final_unit_price_rial']);
+        $this->assertSame('9000000', $otherSell['final_unit_price_rial']);
+        $this->assertSame('10100000', $targetBuy['total_amount_rial']);
+        $this->assertSame('9090000', $targetSell['total_amount_rial']);
+        $this->assertSame('10000000', $otherBuy['total_amount_rial']);
+        $this->assertSame('9000000', $otherSell['total_amount_rial']);
+        $this->assertSame('1.0000', $targetBuy['adjustment_percent']);
+        $this->assertSame('1.0000', $targetSell['adjustment_percent']);
+        $this->assertSame('0', $otherBuy['adjustment_percent']);
+        $this->assertSame('0', $otherSell['adjustment_percent']);
+    }
+
+    #[Test]
     public function amount_calculation_price_uses_the_exact_divisor_only_for_product_three(): void
     {
         $service = new CustomerUnitPriceService;

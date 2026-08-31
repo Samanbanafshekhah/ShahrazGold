@@ -20,7 +20,11 @@ use Illuminate\Support\Str;
 
 final class PurchaseRequestService
 {
-    public function __construct(private TradePriceCalculator $calculator, private AuditService $audit) {}
+    public function __construct(
+        private TradePriceCalculator $calculator,
+        private AuditService $audit,
+        private TradeAvailabilityService $tradeAvailability,
+    ) {}
 
     public function create(User $user, array $input): PurchaseRequest
     {
@@ -42,6 +46,7 @@ final class PurchaseRequestService
             abort_if($tradeType === TradeType::CustomerBuy && ! $user->canBuyProduct($product->id), 403, 'PRODUCT_ACCESS_DENIED');
             abort_if($tradeType === TradeType::CustomerBuy && ! $product->is_buyable, 409, 'خرید این محصول در حال حاضر امکان‌پذیر نیست.');
             abort_if($tradeType === TradeType::CustomerSell && ! $product->is_sellable, 409, 'فروش این محصول در حال حاضر امکان‌پذیر نیست.');
+            $this->tradeAvailability->ensureOpen($product, $tradeType);
             $calculation = $this->calculator->calculate($product, $price, $tradeType, $entryMode, $input['quantity'] ?? null, $input['amount_rial'] ?? null, $user);
 
             if ((int) $input['expected_product_price_id'] !== $price->id) {

@@ -118,16 +118,19 @@ function PriceDetailPage() {
                             </div>
                             <Button
                                 type="button"
-                                onClick={() => setShowBuyForm(true)}
+                                disabled={asset.buyDisabled}
+                                onClick={() => {
+                                    if (!asset.buyDisabled) setShowBuyForm(true);
+                                }}
                                 className="mt-3 h-10 w-full rounded-xl bg-gold text-xs font-bold text-primary-foreground hover:opacity-90 sm:text-sm"
                             >
-                                درخواست خرید
+                                {asset.buyDisabled ? "خرید بسته است" : "درخواست خرید"}
                             </Button>
                         </div>
                     </div>
                 )}
 
-                {asset.buy && showBuyForm && (
+                {asset.buy && !asset.buyDisabled && showBuyForm && (
                     <div className="mt-4 border-y border-gold/50 bg-background py-3 sm:mt-6 sm:rounded-2xl sm:border sm:p-4 sm:shadow-elegant">
                         <div className="mb-4">
                             <h2 className="text-sm font-extrabold leading-6 sm:text-base">

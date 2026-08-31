@@ -12,12 +12,12 @@ final class TradePriceCalculator
 {
     public function __construct(
         private readonly CustomerUnitPriceService $customerUnitPrices = new CustomerUnitPriceService,
+        private readonly ProductFinalAmountService $productFinalAmounts = new ProductFinalAmountService,
     ) {}
 
     public function calculate(Product $product, ProductPrice $price, TradeType $tradeType, EntryMode $entryMode, ?string $quantity, ?string $amountRial, ?User $user = null): array
     {
         $raw = (string) $price->raw_price_rial;
-        $percent = '0';
         $normalAdjustment = $tradeType === TradeType::CustomerSell
             ? (string) $product->sell_price_difference_rial
             : '0';
@@ -35,25 +35,32 @@ final class TradePriceCalculator
         $normal = $tradeType === TradeType::CustomerSell
             ? DecimalMath::sub($raw, $normalAdjustment, 0)
             : $raw;
-        $final = DecimalMath::add($normal, $roleAdjustment, 0);
+        $calculatedPrice = DecimalMath::add($normal, $roleAdjustment, 0);
 
-        abort_if(bccomp($final, '0', 0) <= 0, 409, 'ROLE_PRICE_UNAVAILABLE');
+        abort_if(bccomp($calculatedPrice, '0', 0) <= 0, 409, 'ROLE_PRICE_UNAVAILABLE');
+
+        // The displayed unit price remains the price calculated from the admin
+        // value, sell difference and role adjustment.
+        $final = $calculatedPrice;
 
         $calculationUnitPrice = $this->customerUnitPrices->forCalculation($product, $final);
 
         if ($entryMode === EntryMode::Quantity) {
             $calculatedQuantity = DecimalMath::quantity((string) $quantity);
             $baseTotal = DecimalMath::mul($final, $calculatedQuantity);
-            $total = $this->customerUnitPrices->amount($product, $baseTotal);
+            $calculatedTotal = $this->customerUnitPrices->amount($product, $baseTotal);
         } else {
-            $total = (string) $amountRial;
-            $calculatedQuantity = DecimalMath::quantity(DecimalMath::div($total, $calculationUnitPrice));
+            $calculatedTotal = (string) $amountRial;
+            $calculatedQuantity = DecimalMath::quantity(DecimalMath::div($calculatedTotal, $calculationUnitPrice));
         }
+
+        // Product-specific adjustments apply only to the final order amount.
+        $total = $this->productFinalAmounts->apply($product, $calculatedTotal);
 
         return [
             'product_price_id' => $price->id,
             'raw_unit_price_rial' => $raw,
-            'adjustment_percent' => $percent,
+            'adjustment_percent' => $this->productFinalAmounts->percent($product),
             'adjustment_amount_rial' => $normalAdjustment,
             'role_price_adjustment_rial' => $roleAdjustment,
             'final_unit_price_rial' => $final,

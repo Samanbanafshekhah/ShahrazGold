@@ -14,6 +14,6 @@ class ProductFactory extends Factory
     {
         $name = fake()->unique()->words(2, true);
 
-        return ['product_category_id' => ProductCategory::factory(), 'name' => $name, 'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 99999), 'symbol' => strtoupper(fake()->unique()->lexify('???')).fake()->numberBetween(1, 999), 'unit' => ProductUnit::Gram, 'pricing_mode' => PricingMode::Manual, 'is_active' => true, 'is_buyable' => true, 'is_sellable' => true, 'display_order' => 0, 'trade_adjustment_enabled' => false, 'trade_adjustment_percent' => '0'];
+        return ['product_category_id' => ProductCategory::factory(), 'name' => $name, 'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 99999), 'symbol' => strtoupper(fake()->unique()->lexify('???')).fake()->numberBetween(1, 999), 'unit' => ProductUnit::Gram, 'pricing_mode' => PricingMode::Manual, 'is_active' => true, 'is_buyable' => true, 'buy_disabled' => false, 'is_sellable' => true, 'sell_disabled' => false, 'display_order' => 0, 'trade_adjustment_enabled' => false, 'trade_adjustment_percent' => '0'];
     }
 }

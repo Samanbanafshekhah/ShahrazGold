@@ -343,6 +343,7 @@ function PriceRow({
                     currency={asset.currency}
                     tone="buy"
                     assetTitle={asset.title}
+                    tradeDisabled={asset.buyDisabled === true}
                     onClick={(trigger) => onTrade(asset, "buy", trigger)}
                 />
                 <PriceCell
@@ -351,6 +352,7 @@ function PriceRow({
                     currency={asset.currency}
                     tone="sell"
                     assetTitle={asset.title}
+                    tradeDisabled={asset.sellDisabled === true}
                     onClick={(trigger) => onTrade(asset, "sell", trigger)}
                 />
                 <div className="hidden md:block">
@@ -367,6 +369,7 @@ function PriceCell({
     currency,
     tone,
     assetTitle,
+    tradeDisabled,
     onClick,
 }: {
     label: "خرید" | "فروش";
@@ -374,10 +377,13 @@ function PriceCell({
     currency: GoldAsset["currency"];
     tone: "buy" | "sell";
     assetTitle: string;
+    tradeDisabled: boolean;
     onClick: (trigger: HTMLButtonElement) => void;
 }) {
     const formatted =
-        value === undefined
+        tradeDisabled
+            ? `${label} بسته است`
+            : value === undefined
             ? "—"
             : currency === "IRR"
               ? formatToman(value).replace(" تومان", "")
@@ -385,16 +391,18 @@ function PriceCell({
     return (
         <button
             type="button"
-            disabled={value === undefined}
+            disabled={value === undefined || tradeDisabled}
             onClick={(event) => onClick(event.currentTarget)}
             aria-label={
-                value === undefined
+                tradeDisabled
+                    ? `${label} ${assetTitle} بسته است`
+                    : value === undefined
                     ? `قیمت ${label} ${assetTitle} موجود نیست`
                     : `ثبت درخواست ${label} ${assetTitle}`
             }
             className={
                 "min-w-0 rounded-lg px-1 py-2 text-center transition-colors enabled:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed sm:px-2 md:text-start " +
-                (value === undefined
+                (value === undefined || tradeDisabled
                     ? "bg-muted/55"
                     : tone === "buy"
                       ? "bg-positive-soft"
@@ -404,8 +412,8 @@ function PriceCell({
             <span className="sr-only">{label}</span>
             <strong
                 className={
-                    "block whitespace-nowrap text-sm font-extrabold tabular-nums sm:text-base lg:text-lg " +
-                    (value === undefined
+                    "block whitespace-nowrap text-[15.5px] font-black leading-none tracking-tight tabular-nums sm:text-[17px] lg:text-[19px] " +
+                    (value === undefined || tradeDisabled
                         ? "text-muted-foreground"
                         : tone === "buy"
                           ? "text-positive"
@@ -424,7 +432,7 @@ function TrendIndicator({ change, percentage }: { change: number; percentage: nu
         change > 0 ? "text-positive" : change < 0 ? "text-negative" : "text-muted-foreground";
     return (
         <span
-            className={`inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-bold tabular-nums sm:text-[11px] ${tone}`}
+            className={`inline-flex items-center gap-1 whitespace-nowrap text-xs font-black tabular-nums sm:text-sm ${tone}`}
             aria-label={`تغییر قیمت ${formatPercent(percentage)}`}
         >
             <Icon className="h-3.5 w-3.5" aria-hidden />

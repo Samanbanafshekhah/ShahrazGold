@@ -6,6 +6,7 @@ use App\Enums\EntryMode;
 use App\Enums\ProductUnit;
 use App\Enums\TradeType;
 use App\Models\Product;
+use App\Services\TradeAvailabilityService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -45,6 +46,10 @@ class TradeRequest extends FormRequest
             }
             if ($this->string('trade_type')->value() === TradeType::CustomerSell->value && ! $product->is_sellable) {
                 $validator->errors()->add('trade_type', 'فروش این محصول در حال حاضر امکان‌پذیر نیست.');
+            }
+            $tradeType = TradeType::tryFrom($this->string('trade_type')->value());
+            if ($tradeType && ($message = app(TradeAvailabilityService::class)->closedMessage($product, $tradeType))) {
+                $validator->errors()->add('trade_type', $message);
             }
             if ($product->unit === ProductUnit::Count && $this->string('entry_mode')->value() === EntryMode::Quantity->value && ! preg_match('/^[1-9]\d*$/', (string) $this->input('quantity'))) {
                 $validator->errors()->add('quantity', 'تعداد این محصول باید عدد صحیح باشد.');

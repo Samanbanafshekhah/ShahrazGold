@@ -12,11 +12,13 @@ export interface PurchaseProduct {
     unit: string;
     unitPrice: number;
     amountDivisor: number;
+    finalAmountMultiplier: number;
     priceUnit: "تومان" | "دلار";
     updatedAt: string;
     change?: number;
     changePercent?: number;
     available?: boolean;
+    tradeDisabled?: boolean;
 }
 
 export interface PurchaseCalculation {
@@ -38,11 +40,17 @@ export function purchaseProductFromAsset(
         unit: asset.unit,
         unitPrice: asset.currency === "IRR" ? (price ?? 0) / 10 : (price ?? 0),
         amountDivisor: asset.tradeAmountDivisor ?? 1,
+        finalAmountMultiplier: asset.finalAmountMultiplier ?? 1,
         priceUnit: asset.currency === "IRR" ? "تومان" : "دلار",
         updatedAt: asset.updatedAt,
         change: asset.change,
         changePercent: asset.changePercent,
-        available: asset.available !== false && price !== undefined && price > 0,
+        available:
+            asset.available !== false &&
+            price !== undefined &&
+            price > 0 &&
+            (action === "buy" ? asset.buyDisabled !== true : asset.sellDisabled !== true),
+        tradeDisabled: action === "buy" ? asset.buyDisabled === true : asset.sellDisabled === true,
     };
 }
 
@@ -50,6 +58,10 @@ export function getPurchaseAvailabilityError(
     product: PurchaseProduct,
     action: TradeAction = "buy",
 ): string | undefined {
+    if (product.tradeDisabled) {
+        return `${action === "buy" ? "خرید" : "فروش"} این محصول در حال حاضر بسته است.`;
+    }
+
     if (
         product.available === false ||
         !Number.isFinite(product.unitPrice) ||
@@ -69,6 +81,7 @@ export function calculatePurchase(
     quantity: string,
     unitPrice: number,
     amountDivisor = 1,
+    finalAmountMultiplier = 1,
 ): PurchaseCalculation {
     const numericAmount = parsePositivePurchaseNumber(amount);
     const numericQuantity = parsePositivePurchaseNumber(quantity);
@@ -80,22 +93,27 @@ export function calculatePurchase(
         mode === "quantity"
             ? multiplyDecimalByNumber(quantity, unitPrice) / validAmountDivisor(amountDivisor)
             : numericAmount;
+    const finalTotal = calculatedTotal * validAmountMultiplier(finalAmountMultiplier);
     const valid =
         Number.isFinite(calculatedQuantity) &&
-        Number.isFinite(calculatedTotal) &&
+        Number.isFinite(finalTotal) &&
         calculatedQuantity > 0 &&
-        calculatedTotal > 0 &&
-        Number.isSafeInteger(Math.round(calculatedTotal * 10));
+        finalTotal > 0 &&
+        Number.isSafeInteger(Math.round(finalTotal * 10));
 
     return {
         quantity: valid ? calculatedQuantity : 0,
-        total: valid ? calculatedTotal : 0,
+        total: valid ? finalTotal : 0,
         valid,
     };
 }
 
 function validAmountDivisor(divisor: number): number {
     return Number.isFinite(divisor) && divisor > 0 ? divisor : 1;
+}
+
+function validAmountMultiplier(multiplier: number): number {
+    return Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1;
 }
 
 export function parsePositivePurchaseNumber(value: string): number {
