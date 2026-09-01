@@ -954,7 +954,7 @@ function PriceActionButton({
             aria-label={label}
             title={label}
             className={
-                "w-full min-w-0 rounded-lg px-1 py-2 text-center transition-colors enabled:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed sm:px-2 xl:text-start " +
+                "w-full min-w-0 rounded-[2px] px-1 py-2 text-center transition-colors enabled:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed sm:px-2 xl:text-start " +
                 (increase ? "bg-positive-soft" : "bg-negative-soft disabled:bg-muted/55")
             }
         >

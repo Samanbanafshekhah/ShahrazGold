@@ -6,7 +6,8 @@ import { EmptyState } from "@/components/empty-state";
 import { PersianDatePicker } from "@/components/ui/persian-date-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TRANSACTION_STATUS_LABELS, useTransactions } from "@/lib/api-data";
-import { formatNumber } from "@/lib/formatters";
+// بخش حسابداری موقتاً غیرفعال است.
+// import { formatNumber } from "@/lib/formatters";
 import type { TransactionStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/transactions/")({
@@ -40,16 +41,17 @@ function TransactionsPage() {
             }),
         [all, filter, fromDate, toDate],
     );
-    const rialBalance = useMemo(
-        () =>
-            all
-                .filter(
-                    (transaction) =>
-                        transaction.status === "approved" || transaction.status === "completed",
-                )
-                .reduce((total, transaction) => total + transaction.total, 0),
-        [all],
-    );
+    // محاسبه مانده ریال برای بخش حسابداری (موقتاً غیرفعال).
+    // const rialBalance = useMemo(
+    //     () =>
+    //         all
+    //             .filter(
+    //                 (transaction) =>
+    //                     transaction.status === "approved" || transaction.status === "completed",
+    //             )
+    //             .reduce((total, transaction) => total + transaction.total, 0),
+    //     [all],
+    // );
     const filters: { key: Filter; label: string }[] = [
         { key: "all", label: "همه" },
         ...(Object.entries(TRANSACTION_STATUS_LABELS) as [TransactionStatus, string][]).map(
@@ -65,13 +67,15 @@ function TransactionsPage() {
             </div>
 
             <Tabs defaultValue="transactions" dir="rtl" className="mt-5">
-                <TabsList className="grid h-11 w-full grid-cols-2 sm:w-72">
+                <TabsList className="grid h-11 w-full grid-cols-1 sm:w-36">
                     <TabsTrigger value="transactions" className="h-9 font-bold">
                         تراکنش‌ها
                     </TabsTrigger>
+                    {/*
                     <TabsTrigger value="accounting" className="h-9 font-bold">
                         حسابداری
                     </TabsTrigger>
+                    */}
                 </TabsList>
 
                 <TabsContent value="transactions" className="mt-4">
@@ -140,6 +144,7 @@ function TransactionsPage() {
                     </div>
                 </TabsContent>
 
+                {/*
                 <TabsContent value="accounting" className="mt-4">
                     <section className="rounded-2xl border border-border bg-card p-5 shadow-elegant sm:p-6">
                         <p className="text-sm font-bold text-muted-foreground">مانده ریال</p>
@@ -154,6 +159,7 @@ function TransactionsPage() {
                         </div>
                     </section>
                 </TabsContent>
+                */}
             </Tabs>
         </AppShell>
     );

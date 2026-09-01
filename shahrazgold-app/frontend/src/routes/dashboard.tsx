@@ -171,7 +171,7 @@ function DashboardPage() {
                             <h2 className="text-xs font-extrabold text-[color:var(--gold-dark)] sm:text-sm">
                                 اطلاعیه بازار
                             </h2>
-                            <p className="mt-1 text-sm font-medium leading-6 text-foreground sm:text-base sm:leading-7">
+                            <p className="mt-1 whitespace-pre-wrap break-words text-sm font-medium leading-6 text-foreground sm:text-base sm:leading-7">
                                 {announcement}
                             </p>
                         </div>
