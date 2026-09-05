@@ -4,6 +4,7 @@ import type { User } from "./types";
 
 const AUTH_KEY = "shg_auth_user";
 const PENDING_REGISTRATION_KEY = "shg_pending_registration";
+const PENDING_PASSWORD_RESET_KEY = "shg_pending_password_reset";
 
 interface ApiUser {
     id: number;
@@ -34,6 +35,18 @@ interface PendingRegistrationPayload {
 
 interface PendingRegistration {
     registrationToken: string;
+    mobile: string;
+    resendAfter: number;
+}
+interface PendingPasswordResetPayload {
+    reset_token: string;
+    mobile: string;
+    expires_in: number;
+    resend_after: number;
+}
+
+export interface PendingPasswordReset {
+    resetToken: string;
     mobile: string;
     resendAfter: number;
 }
@@ -98,7 +111,9 @@ async function validateSession() {
 
 export function subscribe(listener: Listener) {
     listeners.add(listener);
-    return () => listeners.delete(listener);
+    return () => {
+        listeners.delete(listener);
+    };
 }
 
 export function getCurrentUser(): User | null {
@@ -228,6 +243,89 @@ export async function resendRegistrationOtp(): Promise<LoginResult & { resendAft
         return { ok: true, resendAfter: updated.resendAfter };
     } catch (error) {
         return { ok: false, error: apiErrorMessage(error, "ارسال مجدد کد ناموفق بود.") };
+    }
+}
+
+function storePendingPasswordReset(payload: PendingPasswordResetPayload): PendingPasswordReset {
+    const pending = {
+        resetToken: payload.reset_token,
+        mobile: payload.mobile,
+        resendAfter: payload.resend_after,
+    } satisfies PendingPasswordReset;
+    window.sessionStorage.setItem(PENDING_PASSWORD_RESET_KEY, JSON.stringify(pending));
+    return pending;
+}
+
+export function getPendingPasswordReset(): PendingPasswordReset | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const raw = window.sessionStorage.getItem(PENDING_PASSWORD_RESET_KEY);
+        return raw ? (JSON.parse(raw) as PendingPasswordReset) : null;
+    } catch {
+        return null;
+    }
+}
+
+export function clearPendingPasswordReset() {
+    if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(PENDING_PASSWORD_RESET_KEY);
+    }
+}
+
+export async function startPasswordReset(
+    mobile: string,
+): Promise<LoginResult & { pending?: PendingPasswordReset }> {
+    try {
+        const response = await apiRequest<PendingPasswordResetPayload>("auth/forgot-password", {
+            method: "POST",
+            authenticated: false,
+            body: JSON.stringify({ mobile }),
+        });
+        return { ok: true, pending: storePendingPasswordReset(response.data) };
+    } catch (error) {
+        return { ok: false, error: apiErrorMessage(error, "ارسال کد بازیابی ناموفق بود.") };
+    }
+}
+
+export async function resendPasswordResetOtp(): Promise<LoginResult & { resendAfter?: number }> {
+    const pending = getPendingPasswordReset();
+    if (!pending) return { ok: false, error: "بازیابی رمز را از ابتدا انجام دهید." };
+
+    try {
+        const response = await apiRequest<PendingPasswordResetPayload>(
+            "auth/forgot-password/resend",
+            {
+                method: "POST",
+                authenticated: false,
+                body: JSON.stringify({ reset_token: pending.resetToken }),
+            },
+        );
+        const updated = storePendingPasswordReset(response.data);
+        return { ok: true, resendAfter: updated.resendAfter };
+    } catch (error) {
+        return { ok: false, error: apiErrorMessage(error, "ارسال مجدد کد ناموفق بود.") };
+    }
+}
+
+export async function resetForgottenPassword(code: string, password: string): Promise<LoginResult> {
+    const pending = getPendingPasswordReset();
+    if (!pending) return { ok: false, error: "بازیابی رمز را از ابتدا انجام دهید." };
+
+    try {
+        await apiRequest<null>("auth/reset-password", {
+            method: "POST",
+            authenticated: false,
+            body: JSON.stringify({
+                reset_token: pending.resetToken,
+                code,
+                password,
+                password_confirmation: password,
+            }),
+        });
+        clearPendingPasswordReset();
+        return { ok: true };
+    } catch (error) {
+        return { ok: false, error: apiErrorMessage(error, "تغییر رمز عبور ناموفق بود.") };
     }
 }
 

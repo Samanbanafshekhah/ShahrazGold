@@ -53,12 +53,16 @@ composer run dev
 
 ```dotenv
 KAVENEGAR_API_KEY=your-api-key
-KAVENEGAR_OTP_TEMPLATE=shahrazgold-verify
+KAVENEGAR_OTP_TEMPLATE=shahrazgoldverify
 ```
 
 سپس `php artisan config:clear` را اجرا کنید. کلید API فقط در backend استفاده می‌شود و نباید در متغیرهای `VITE_*` یا کد frontend قرار بگیرد.
 
 جریان ثبت‌نام از مسیرهای `POST /api/v1/auth/register`، `POST /api/v1/auth/register/verify` و `POST /api/v1/auth/register/resend` استفاده می‌کند. کد شش‌رقمی پنج دقیقه اعتبار دارد، ارسال مجدد پس از ۹۰ ثانیه ممکن است و پس از پنج تلاش ناموفق باطل می‌شود؛ این مقادیر از متغیرهای نمونه محیط قابل تغییرند.
+
+بازیابی رمز عبور پیامکی از مسیرهای `POST /api/v1/auth/forgot-password`،
+`POST /api/v1/auth/forgot-password/resend` و `POST /api/v1/auth/reset-password` استفاده
+می‌کند. پس از تغییر رمز، تمام نشست‌های قبلی کاربر باطل می‌شوند.
 
 ## بررسی کیفیت
 

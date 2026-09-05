@@ -4,16 +4,20 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\PasswordRequest;
 use App\Http\Requests\Auth\ProfileRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResendPasswordResetOtpRequest;
 use App\Http\Requests\Auth\ResendRegistrationOtpRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyRegistrationOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\PasswordResetOtpService;
 use App\Services\RegistrationOtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -85,6 +89,40 @@ class AuthController extends Controller
         $token = $user->createToken($request->input('device_name', 'api'))->plainTextToken;
 
         return $this->success(['user' => (new UserResource($user))->resolve(), 'access_token' => $token, 'token_type' => 'Bearer'], 'Logged in.');
+    }
+
+    public function forgotPassword(
+        ForgotPasswordRequest $request,
+        PasswordResetOtpService $otp,
+    ): JsonResponse {
+        return $this->success(
+            $otp->start((string) $request->string('mobile')),
+            'اگر حساب فعالی با این شماره وجود داشته باشد، کد بازیابی ارسال می‌شود.',
+            202,
+        );
+    }
+
+    public function resetPassword(
+        ResetPasswordRequest $request,
+        PasswordResetOtpService $otp,
+    ): JsonResponse {
+        $otp->reset(
+            (string) $request->string('reset_token'),
+            (string) $request->string('code'),
+            (string) $request->string('password'),
+        );
+
+        return $this->success(null, 'رمز عبور با موفقیت تغییر کرد.');
+    }
+
+    public function resendPasswordReset(
+        ResendPasswordResetOtpRequest $request,
+        PasswordResetOtpService $otp,
+    ): JsonResponse {
+        return $this->success(
+            $otp->resend((string) $request->string('reset_token')),
+            'کد بازیابی جدید ارسال شد.',
+        );
     }
 
     public function logout(Request $request): JsonResponse

@@ -27,6 +27,9 @@ Route::prefix('v1')->group(function () {
         Route::post('register/verify', [AuthController::class, 'verifyRegistration'])->middleware('throttle:otp-verify');
         Route::post('register/resend', [AuthController::class, 'resendRegistration'])->middleware('throttle:otp-resend');
         Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+        Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:password-reset');
+        Route::post('forgot-password/resend', [AuthController::class, 'resendPasswordReset'])->middleware('throttle:password-reset-resend');
+        Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:password-reset-verify');
         Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);
             Route::post('logout-all', [AuthController::class, 'logoutAll']);
