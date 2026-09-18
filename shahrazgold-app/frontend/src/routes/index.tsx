@@ -2,9 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PublicHeader } from "@/components/public-header";
 import { PublicFooter } from "@/components/public-footer";
 import { Button } from "@/components/ui/button";
-import { PriceCard } from "@/components/price-card";
 import { GoldPricePage } from "@/components/live-prices";
-import { useAssets } from "@/lib/api-data";
 import { Clock8, History, Lock, Smartphone, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -12,11 +10,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-    const { items: assets } = useAssets();
-    const featured = assets.filter((asset) =>
-        ["GOLD18", "EMAMI", "OUNCE", "HALF"].includes(asset.symbol),
-    );
-
     return (
         <div className="min-h-screen bg-background">
             <PublicHeader />
@@ -24,8 +17,8 @@ function Landing() {
             {/* Hero */}
             <section className="relative overflow-hidden">
                 <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_80%_10%,color-mix(in_oklab,var(--gold)_18%,transparent),transparent_60%)]" />
-                <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:py-24">
-                    <div className="flex flex-col justify-center">
+                <div className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:py-24">
+                    <div className="flex max-w-3xl flex-col justify-center">
                         <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-gold bg-gold-soft px-3 py-1 text-xs font-bold text-[color:var(--gold-dark)]">
                             <Sparkles className="h-3.5 w-3.5" />
                             مرجع شفاف قیمت طلا و سکه
@@ -49,29 +42,6 @@ function Landing() {
                             </Button>
                         </div>
                     </div>
-
-                    <div className="relative">
-                        <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-gradient-to-br from-[color:var(--gold-soft)] to-transparent blur-2xl" />
-                        <div className="rounded-3xl border border-border bg-card p-6 shadow-elegant">
-                            <div className="mb-4 flex items-center justify-between">
-                                <div>
-                                    <div className="text-xs text-muted-foreground">
-                                        نمای کلی بازار
-                                    </div>
-                                    <div className="text-sm font-bold">قیمت‌های منتخب</div>
-                                </div>
-                                <span className="inline-flex items-center gap-1 rounded-full bg-positive-soft px-2 py-1 text-[11px] font-bold text-positive">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--positive)]" />
-                                    بازار باز
-                                </span>
-                            </div>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                {featured.map((a) => (
-                                    <PriceCard key={a.symbol} asset={a} />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </section>
 
@@ -79,43 +49,49 @@ function Landing() {
             <section id="features" className="border-t border-border bg-card/50 py-16">
                 <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
                     <div className="mb-10 text-center">
-                        <h2 className="text-2xl font-extrabold sm:text-3xl">چرا شهراز‌گلد؟</h2>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            تجربه‌ای حرفه‌ای برای دنبال کردن بازار طلا و سکه
+                        <h2 className="text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+                            چرا شهراز‌گلد؟
+                        </h2>
+                        <p className="mx-auto mt-3 max-w-2xl text-sm font-medium leading-7 text-muted-foreground sm:text-base">
+                            مشاهده قیمت لحظه‌ای طلا و سکه و مدیریت معاملات در یک سامانه امن و ساده
                         </p>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {[
                             {
                                 Icon: Clock8,
-                                t: "قیمت‌های به‌روز",
-                                d: "دریافت لحظه‌ای قیمت طلا، سکه و اونس جهانی.",
+                                t: "قیمت لحظه‌ای طلا و سکه",
+                                d: "قیمت روز طلای ۱۸ عیار، سکه امامی، نیم‌سکه، ربع‌سکه و اونس جهانی را آنلاین مشاهده کنید.",
                             },
                             {
                                 Icon: Lock,
-                                t: "حساب کاربری امن",
-                                d: "ورود امن و مدیریت نشست با Laravel Sanctum.",
+                                t: "خرید و فروش امن طلا",
+                                d: "پس از ورود به حساب کاربری، درخواست خرید یا فروش طلا و سکه را با قیمت شفاف ثبت کنید.",
                             },
                             {
                                 Icon: History,
-                                t: "سابقه معاملات",
-                                d: "دسترسی سریع به تمامی تراکنش‌های شما.",
+                                t: "پیگیری درخواست و معامله",
+                                d: "وضعیت درخواست‌های خرید و فروش و تاریخچه معاملات طلا و سکه را یکجا پیگیری کنید.",
                             },
                             {
                                 Icon: Smartphone,
-                                t: "تجربه واکنش‌گرا",
-                                d: "طراحی روان روی موبایل، تبلت و دسکتاپ.",
+                                t: "دسترسی سریع در همه دستگاه‌ها",
+                                d: "قیمت بازار طلا و امکانات شهراز‌گلد را در موبایل، تبلت و دسکتاپ به‌راحتی در اختیار داشته باشید.",
                             },
                         ].map(({ Icon, t, d }) => (
                             <div
                                 key={t}
-                                className="rounded-2xl border border-border bg-card p-5 shadow-elegant"
+                                className="rounded-2xl border border-border bg-card p-5 shadow-elegant sm:p-6"
                             >
                                 <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-soft text-[color:var(--gold-dark)]">
                                     <Icon className="h-5 w-5" />
                                 </div>
-                                <h3 className="text-sm font-bold">{t}</h3>
-                                <p className="mt-1 text-xs leading-6 text-muted-foreground">{d}</p>
+                                <h3 className="text-base font-extrabold leading-7 tracking-tight sm:text-lg">
+                                    {t}
+                                </h3>
+                                <p className="mt-2 text-sm font-normal leading-7 text-muted-foreground">
+                                    {d}
+                                </p>
                             </div>
                         ))}
                     </div>
