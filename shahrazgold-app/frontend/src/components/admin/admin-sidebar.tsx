@@ -5,6 +5,7 @@ import {
     FolderTree,
     ShoppingBag,
     Megaphone,
+    MessageSquareText,
     Users,
     Settings,
     ShieldCheck,
@@ -21,6 +22,7 @@ type NavItem = {
         | "/admin/announcement"
         | "/admin/users"
         | "/admin/settings"
+        | "/admin/sms"
         | "/admin/roles";
     label: string;
     icon: typeof LayoutDashboard;
@@ -34,6 +36,7 @@ const NAV: NavItem[] = [
     { to: "/admin/users", label: "مدیریت کاربران", icon: Users },
     { to: "/admin/roles", label: "مدیریت نقش‌ها", icon: ShieldCheck },
     { to: "/admin/announcement", label: "اطلاعیه بازار", icon: Megaphone },
+    { to: "/admin/sms", label: "ارسال پیامک", icon: MessageSquareText },
     { to: "/admin/settings", label: "تنظیمات", icon: Settings },
 ];
 

@@ -26,6 +26,7 @@ import { Route as ProfileEditRouteImport } from './routes/profile.edit'
 import { Route as PricesSymbolRouteImport } from './routes/prices.$symbol'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTransactionsRouteImport } from './routes/admin.transactions'
+import { Route as AdminSmsRouteImport } from './routes/admin.sms'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminRolesRouteImport } from './routes/admin.roles'
 import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
@@ -118,6 +119,11 @@ const AdminTransactionsRoute = AdminTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSmsRoute = AdminSmsRouteImport.update({
+  id: '/sms',
+  path: '/sms',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sms': typeof AdminSmsRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/prices/$symbol': typeof PricesSymbolRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sms': typeof AdminSmsRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/prices/$symbol': typeof PricesSymbolRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sms': typeof AdminSmsRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/prices/$symbol': typeof PricesSymbolRoute
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/roles'
     | '/admin/settings'
+    | '/admin/sms'
     | '/admin/transactions'
     | '/admin/users'
     | '/prices/$symbol'
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/roles'
     | '/admin/settings'
+    | '/admin/sms'
     | '/admin/transactions'
     | '/admin/users'
     | '/prices/$symbol'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/roles'
     | '/admin/settings'
+    | '/admin/sms'
     | '/admin/transactions'
     | '/admin/users'
     | '/prices/$symbol'
@@ -439,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTransactionsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/sms': {
+      id: '/admin/sms'
+      path: '/sms'
+      fullPath: '/admin/sms'
+      preLoaderRoute: typeof AdminSmsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -491,6 +510,7 @@ interface AdminRouteChildren {
   AdminRequestsRoute: typeof AdminRequestsRoute
   AdminRolesRoute: typeof AdminRolesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSmsRoute: typeof AdminSmsRoute
   AdminTransactionsRoute: typeof AdminTransactionsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -503,6 +523,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRequestsRoute: AdminRequestsRoute,
   AdminRolesRoute: AdminRolesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminSmsRoute: AdminSmsRoute,
   AdminTransactionsRoute: AdminTransactionsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
