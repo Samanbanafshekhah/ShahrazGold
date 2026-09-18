@@ -38,10 +38,41 @@ class KavenegarSmsService
     }
 
     /**
+     * Send the same message to at most 200 recipients in one Kavenegar request.
+     *
+     * @param  array<int, string>  $receptors
+     * @return array<int, array<string, mixed>>
+     */
+    public function sendMany(array $receptors, string $message): array
+    {
+        $receptors = array_values(array_unique(array_filter(array_map('trim', $receptors))));
+        if ($receptors === [] || count($receptors) > 200) {
+            throw new KavenegarException('Kavenegar accepts between 1 and 200 recipients per request.');
+        }
+
+        $parameters = ['receptor' => implode(',', $receptors), 'message' => $message];
+        $sender = trim((string) config('services.kavenegar.sender'));
+        if ($sender !== '') {
+            $parameters['sender'] = $sender;
+        }
+
+        return $this->requestEntries('sms/send.json', $parameters);
+    }
+
+    /**
      * @param  array<string, string>  $parameters
      * @return array<string, mixed>
      */
     private function request(string $method, array $parameters): array
+    {
+        return $this->requestEntries($method, $parameters)[0];
+    }
+
+    /**
+     * @param  array<string, string>  $parameters
+     * @return array<int, array<string, mixed>>
+     */
+    private function requestEntries(string $method, array $parameters): array
     {
         $apiKey = trim((string) config('services.kavenegar.api_key'));
         if ($apiKey === '') {
@@ -61,11 +92,11 @@ class KavenegarSmsService
             throw new KavenegarException('Could not connect to Kavenegar.', previous: $exception);
         }
 
-        return $this->validatedEntry($response);
+        return $this->validatedEntries($response);
     }
 
-    /** @return array<string, mixed> */
-    private function validatedEntry(Response $response): array
+    /** @return array<int, array<string, mixed>> */
+    private function validatedEntries(Response $response): array
     {
         $payload = $response->json();
         $status = is_array($payload) ? data_get($payload, 'return.status') : null;
@@ -78,11 +109,11 @@ class KavenegarSmsService
             );
         }
 
-        $entry = data_get($payload, 'entries.0');
-        if (! is_array($entry)) {
+        $entries = data_get($payload, 'entries');
+        if (! is_array($entries) || $entries === []) {
             throw new KavenegarException('Kavenegar response did not contain a message entry.', 200);
         }
 
-        return $entry;
+        return array_values(array_filter($entries, 'is_array'));
     }
 }

@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-reset-verify', fn (Request $request) => Limit::perMinute(10)->by($request->ip().'|'.$request->string('reset_token')));
         RateLimiter::for('password-reset-resend', fn (Request $request) => Limit::perMinute(2)->by($request->ip().'|'.$request->string('reset_token')));
         RateLimiter::for('price-write', fn () => Limit::none());
+        RateLimiter::for('admin-sms', fn (Request $request) => Limit::perMinute(5)->by((string) optional($request->user())->id ?: $request->ip()));
         RateLimiter::for('trade-preview', fn (Request $request) => Limit::perMinute(60)->by((string) optional($request->user())->id ?: $request->ip()));
         RateLimiter::for('trade-create', fn (Request $request) => Limit::perMinute(20)->by((string) optional($request->user())->id ?: $request->ip()));
         RateLimiter::for('presence', fn (Request $request) => Limit::perMinute(6)->by((string) optional($request->user())->id ?: $request->ip()));

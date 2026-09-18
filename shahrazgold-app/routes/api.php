@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductPriceController;
 use App\Http\Controllers\Api\V1\Admin\PurchaseRequestController as AdminPurchaseRequestController;
 use App\Http\Controllers\Api\V1\Admin\ReportController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
+use App\Http\Controllers\Api\V1\Admin\SmsController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\AnnouncementController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -59,6 +60,8 @@ Route::prefix('v1')->group(function () {
             Route::get('roles/{role}/price-adjustments', [RoleController::class, 'priceAdjustments']);
             Route::put('roles/{role}/price-adjustments', [RoleController::class, 'updatePriceAdjustments']);
             Route::apiResource('users', UserController::class);
+            Route::get('sms/recipients', [SmsController::class, 'recipients']);
+            Route::post('sms', [SmsController::class, 'store'])->middleware('throttle:admin-sms');
             Route::apiResource('roles', RoleController::class)->except(['create', 'edit']);
             Route::patch('users/{user}/status', [UserController::class, 'status']);
             Route::apiResource('categories', AdminCategoryController::class);
