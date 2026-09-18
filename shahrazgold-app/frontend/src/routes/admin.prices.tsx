@@ -1,5 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+    DndContext,
+    KeyboardSensor,
+    PointerSensor,
+    TouchSensor,
+    closestCenter,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    arrayMove,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
     ArrowDown,
     ArrowUp,
     ListPlus,
@@ -10,8 +28,9 @@ import {
     RefreshCw,
     Save,
     Trash2,
+    GripVertical,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { AdminPage } from "@/components/admin/admin-page";
 import {
@@ -43,12 +62,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useAdminCategories } from "@/lib/admin-categories";
+import { reorderAdminCategories, useAdminCategories } from "@/lib/admin-categories";
 import {
     addAdminProduct,
     adjustAdminPrice,
     deleteAdminProduct,
     refreshAllAdminPrices,
+    reorderAdminProducts,
     updateAdminProduct,
     updateAdminPriceStep,
     updateAdminTradeAvailability,
@@ -101,6 +121,12 @@ function currentSellPriceDifference(item: AdminPriceItem): string {
 function PricesPage() {
     const prices = useAdminPrices();
     const categories = useAdminCategories();
+    const [savingOrder, setSavingOrder] = useState(false);
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    );
     const priceSections = useMemo(() => {
         const knownCategoryIds = new Set(categories.map((category) => category.id));
         const sections = categories
@@ -135,9 +161,7 @@ function PricesPage() {
     const [deleteTarget, setDeleteTarget] = useState<AdminPriceItem | null>(null);
     const [adjustTarget, setAdjustTarget] = useState<AdminPriceItem | null>(null);
     const [adjustmentSteps, setAdjustmentSteps] = useState("1");
-    const [availabilityPending, setAvailabilityPending] = useState<Set<string>>(
-        () => new Set(),
-    );
+    const [availabilityPending, setAvailabilityPending] = useState<Set<string>>(() => new Set());
 
     function openCreateProduct() {
         const defaultCategory =
@@ -298,6 +322,52 @@ function PricesPage() {
         }
     }
 
+    async function saveProductOrder(event: DragEndEvent) {
+        if (savingOrder || !event.over || event.active.id === event.over.id) return;
+
+        const oldIndex = prices.findIndex((item) => item.id === event.active.id);
+        const newIndex = prices.findIndex((item) => item.id === event.over?.id);
+        if (oldIndex < 0 || newIndex < 0) return;
+
+        const activeItem = prices[oldIndex];
+        const overItem = prices[newIndex];
+        if (activeItem.categoryId !== overItem.categoryId) return;
+
+        const productIds = arrayMove(prices, oldIndex, newIndex).map((item) => item.id);
+        setSavingOrder(true);
+        try {
+            await reorderAdminProducts(productIds);
+            toast.success("ترتیب محصولات ذخیره شد.");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "ذخیره ترتیب محصولات ناموفق بود.");
+        } finally {
+            setSavingOrder(false);
+        }
+    }
+
+    async function saveCategoryOrder(event: DragEndEvent) {
+        if (savingOrder || !event.over || event.active.id === event.over.id) return;
+
+        const oldIndex = categories.findIndex((category) => category.id === event.active.id);
+        const newIndex = categories.findIndex((category) => category.id === event.over?.id);
+        if (oldIndex < 0 || newIndex < 0) return;
+
+        const categoryIds = arrayMove(categories, oldIndex, newIndex).map(
+            (category) => category.id,
+        );
+        setSavingOrder(true);
+        try {
+            await reorderAdminCategories(categoryIds);
+            toast.success("ترتیب دسته‌بندی‌ها ذخیره شد.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : "ذخیره ترتیب دسته‌بندی‌ها ناموفق بود.",
+            );
+        } finally {
+            setSavingOrder(false);
+        }
+    }
+
     return (
         <AdminPage
             title="مدیریت محصولات و قیمت‌ها"
@@ -306,7 +376,8 @@ function PricesPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
                     قیمت سبز، قیمت خرید و قیمت قرمز، قیمت فروش مشتری است؛ با کلیک روی آن‌ها قیمت
-                    پایه یک گام افزایش یا کاهش پیدا می‌کند.
+                    پایه یک گام افزایش یا کاهش پیدا می‌کند. با دستگیره‌های طلایی، ترتیب دسته‌بندی‌ها
+                    و محصولات هر دسته را تغییر دهید.
                 </p>
                 <div className="flex w-full flex-wrap gap-2 sm:w-auto">
                     <Button size="sm" onClick={openCreateProduct} className="flex-1 sm:flex-none">
@@ -329,23 +400,41 @@ function PricesPage() {
             </div>
 
             {priceSections.length > 0 ? (
-                <div className="space-y-5 sm:space-y-6">
-                    {priceSections.map((section) => (
-                        <AdminPriceSection
-                            key={section.id}
-                            title={section.title}
-                            description={section.description}
-                            items={section.items}
-                            onIncrease={(item) => adjustPrice(item, 1)}
-                            onDecrease={(item) => adjustPrice(item, -1)}
-                            onEdit={openEditProduct}
-                            onPriceStepSetting={openPriceStepSetting}
-                            onDelete={setDeleteTarget}
-                            availabilityPending={availabilityPending}
-                            onAvailabilityChange={changeTradeAvailability}
-                        />
-                    ))}
-                </div>
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={saveCategoryOrder}
+                >
+                    <SortableContext
+                        items={priceSections
+                            .filter((section) => section.id !== "uncategorized")
+                            .map((section) => section.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <div className="space-y-5 sm:space-y-6">
+                            {priceSections.map((section) => (
+                                <AdminPriceSection
+                                    key={section.id}
+                                    sectionId={section.id}
+                                    categorySortable={section.id !== "uncategorized"}
+                                    sensors={sensors}
+                                    title={section.title}
+                                    description={section.description}
+                                    items={section.items}
+                                    sortingDisabled={savingOrder}
+                                    onProductDragEnd={saveProductOrder}
+                                    onIncrease={(item) => adjustPrice(item, 1)}
+                                    onDecrease={(item) => adjustPrice(item, -1)}
+                                    onEdit={openEditProduct}
+                                    onPriceStepSetting={openPriceStepSetting}
+                                    onDelete={setDeleteTarget}
+                                    availabilityPending={availabilityPending}
+                                    onAvailabilityChange={changeTradeAvailability}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
             ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card px-4 py-12 text-center">
                     <PackagePlus className="mx-auto h-8 w-8 text-muted-foreground" />
@@ -668,6 +757,9 @@ function PricesPage() {
 }
 
 function AdminPriceSection({
+    sectionId,
+    categorySortable,
+    sensors,
     title,
     description,
     items,
@@ -676,9 +768,14 @@ function AdminPriceSection({
     onEdit,
     onPriceStepSetting,
     onDelete,
+    sortingDisabled,
+    onProductDragEnd,
     availabilityPending,
     onAvailabilityChange,
 }: {
+    sectionId: string;
+    categorySortable: boolean;
+    sensors: ReturnType<typeof useSensors>;
     title: string;
     description: string;
     items: AdminPriceItem[];
@@ -687,21 +784,61 @@ function AdminPriceSection({
     onEdit: (item: AdminPriceItem) => void;
     onPriceStepSetting: (item: AdminPriceItem) => void;
     onDelete: (item: AdminPriceItem) => void;
+    sortingDisabled: boolean;
+    onProductDragEnd: (event: DragEndEvent) => void;
     availabilityPending: Set<string>;
-    onAvailabilityChange: (
-        item: AdminPriceItem,
-        side: TradeSide,
-        disabled: boolean,
-    ) => void;
+    onAvailabilityChange: (item: AdminPriceItem, side: TradeSide, disabled: boolean) => void;
 }) {
+    const {
+        attributes,
+        listeners,
+        setActivatorNodeRef,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: sectionId,
+        disabled: sortingDisabled || !categorySortable,
+    });
+    const sectionStyle: CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        position: "relative",
+        zIndex: isDragging ? 30 : undefined,
+    };
+
     return (
-        <section className="overflow-hidden border-y border-border bg-card sm:rounded-2xl sm:border sm:shadow-elegant">
+        <section
+            ref={setNodeRef}
+            style={sectionStyle}
+            className={
+                "overflow-hidden border-y border-border bg-card sm:rounded-2xl sm:border sm:shadow-elegant " +
+                (isDragging ? "opacity-90 shadow-2xl ring-2 ring-[color:var(--gold)]/50" : "")
+            }
+        >
             <header className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.15fr)] items-end gap-1.5 border-b border-border bg-muted/35 px-3 py-3 sm:px-5 sm:py-4 xl:flex xl:items-center xl:justify-between xl:gap-3">
-                <div className="min-w-0">
-                    <h2 className="text-sm font-extrabold sm:text-base">{title}</h2>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
-                        {description}
-                    </p>
+                <div className="flex min-w-0 items-center gap-2">
+                    {categorySortable && (
+                        <button
+                            ref={setActivatorNodeRef}
+                            type="button"
+                            disabled={sortingDisabled}
+                            aria-label={`تغییر ترتیب دسته‌بندی ${title}`}
+                            title="جابه‌جایی دسته‌بندی"
+                            className="inline-flex h-10 w-9 shrink-0 touch-none items-center justify-center rounded-xl border border-[color:var(--gold)]/45 bg-gold-soft text-[color:var(--gold-dark)] transition hover:border-[color:var(--gold)] enabled:cursor-grab active:cursor-grabbing disabled:cursor-wait"
+                            {...attributes}
+                            {...listeners}
+                        >
+                            <GripVertical className="h-5 w-5" aria-hidden />
+                        </button>
+                    )}
+                    <div className="min-w-0">
+                        <h2 className="text-sm font-extrabold sm:text-base">{title}</h2>
+                        <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
+                            {description}
+                        </p>
+                    </div>
                 </div>
                 <span className="text-center text-[10px] font-bold text-muted-foreground xl:hidden">
                     خرید
@@ -722,21 +859,33 @@ function AdminPriceSection({
                 <span>عملیات</span>
             </div>
 
-            <div className="divide-y divide-border/80">
-                {items.map((item) => (
-                    <AdminPriceRow
-                        key={item.id}
-                        item={item}
-                        onIncrease={onIncrease}
-                        onDecrease={onDecrease}
-                        onEdit={onEdit}
-                        onPriceStepSetting={onPriceStepSetting}
-                        onDelete={onDelete}
-                        availabilityPending={availabilityPending}
-                        onAvailabilityChange={onAvailabilityChange}
-                    />
-                ))}
-            </div>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onProductDragEnd}
+            >
+                <SortableContext
+                    items={items.map((item) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <div className="divide-y divide-border/80">
+                        {items.map((item) => (
+                            <AdminPriceRow
+                                key={item.id}
+                                item={item}
+                                sortingDisabled={sortingDisabled}
+                                onIncrease={onIncrease}
+                                onDecrease={onDecrease}
+                                onEdit={onEdit}
+                                onPriceStepSetting={onPriceStepSetting}
+                                onDelete={onDelete}
+                                availabilityPending={availabilityPending}
+                                onAvailabilityChange={onAvailabilityChange}
+                            />
+                        ))}
+                    </div>
+                </SortableContext>
+            </DndContext>
         </section>
     );
 }
@@ -748,6 +897,7 @@ function AdminPriceRow({
     onEdit,
     onPriceStepSetting,
     onDelete,
+    sortingDisabled,
     availabilityPending,
     onAvailabilityChange,
 }: {
@@ -757,26 +907,61 @@ function AdminPriceRow({
     onEdit: (item: AdminPriceItem) => void;
     onPriceStepSetting: (item: AdminPriceItem) => void;
     onDelete: (item: AdminPriceItem) => void;
+    sortingDisabled: boolean;
     availabilityPending: Set<string>;
-    onAvailabilityChange: (
-        item: AdminPriceItem,
-        side: TradeSide,
-        disabled: boolean,
-    ) => void;
+    onAvailabilityChange: (item: AdminPriceItem, side: TradeSide, disabled: boolean) => void;
 }) {
     const meta = getPriceMeta(item);
     const decreaseDisabled = item.price <= item.priceStep;
+    const {
+        attributes,
+        listeners,
+        setActivatorNodeRef,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id, disabled: sortingDisabled });
+    const rowStyle: CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        position: "relative",
+        zIndex: isDragging ? 20 : undefined,
+    };
 
     return (
-        <article className="px-3 py-3 transition-colors hover:bg-muted/25 sm:px-5 sm:py-4">
+        <article
+            ref={setNodeRef}
+            style={rowStyle}
+            className={
+                "px-3 py-3 transition-[background-color,box-shadow,opacity] hover:bg-muted/25 sm:px-5 sm:py-4 " +
+                (isDragging
+                    ? "bg-card opacity-90 shadow-xl ring-1 ring-[color:var(--gold)]/40"
+                    : "")
+            }
+        >
             <div className="admin-price-row-grid grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.15fr)] items-center gap-1.5 xl:grid-cols-[minmax(170px,1.4fr)_minmax(150px,1fr)_minmax(150px,1fr)_90px_120px] xl:gap-3">
-                <div className="group min-w-0">
-                    <h3 className="truncate text-[12.5px] font-bold transition-colors group-hover:text-[color:var(--gold-dark)] sm:text-sm">
-                        {item.title}
-                    </h3>
-                    <p className="mt-0.5 text-[9.5px] text-muted-foreground sm:text-[10px]">
-                        هر {item.unit} · گام {formatNumber(item.priceStep)}
-                    </p>
+                <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+                    <button
+                        ref={setActivatorNodeRef}
+                        type="button"
+                        disabled={sortingDisabled}
+                        aria-label={`تغییر ترتیب ${item.title}`}
+                        title="جابه‌جایی محصول"
+                        className="inline-flex h-9 w-8 shrink-0 touch-none items-center justify-center rounded-lg border border-[color:var(--gold)]/35 bg-gold-soft/60 text-[color:var(--gold-dark)] transition hover:border-[color:var(--gold)] hover:bg-gold-soft enabled:cursor-grab active:cursor-grabbing disabled:cursor-wait"
+                        {...attributes}
+                        {...listeners}
+                    >
+                        <GripVertical className="h-4 w-4" aria-hidden />
+                    </button>
+                    <div className="group min-w-0">
+                        <h3 className="truncate text-[12.5px] font-bold transition-colors group-hover:text-[color:var(--gold-dark)] sm:text-sm">
+                            {item.title}
+                        </h3>
+                        <p className="mt-0.5 text-[9.5px] text-muted-foreground sm:text-[10px]">
+                            هر {item.unit} · گام {formatNumber(item.priceStep)}
+                        </p>
+                    </div>
                 </div>
                 <TradePriceControl
                     tone="increase"

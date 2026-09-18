@@ -107,6 +107,59 @@ class RealtimePriceBroadcastTest extends TestCase
         $this->assertArrayNotHasKey('requires_customer_price_refresh', $payload);
     }
 
+    public function test_product_three_price_change_moves_product_one_by_its_own_step(): void
+    {
+        Event::fake([PriceUpdated::class]);
+        $source = $this->source();
+        $linkedProduct = $this->derivedProduct($source, [
+            'id' => 1,
+            'price_step_rial' => 1000000,
+        ]);
+        $changedProduct = $this->product([
+            'id' => 3,
+            'price_step_rial' => 5000000,
+        ]);
+        ProductPrice::create([
+            'product_id' => $linkedProduct->id,
+            'market_price_quote_id' => null,
+            'raw_price_rial' => '70000000',
+            'pricing_mode' => PricingMode::Derived,
+            'formula_key' => 'gold18_from_mesghal',
+            'formula_parameters' => ['divisor' => '4.3318'],
+            'effective_at' => now()->subSecond()->utc(),
+        ]);
+        ProductPrice::create([
+            'product_id' => $changedProduct->id,
+            'raw_price_rial' => '100000000',
+            'pricing_mode' => PricingMode::Manual,
+            'effective_at' => now()->subSecond()->utc(),
+        ]);
+        Sanctum::actingAs($this->admin());
+
+        $this->postJson("/api/v1/admin/products/{$changedProduct->id}/prices", [
+            'raw_price_rial' => '105000000',
+        ])->assertCreated();
+
+        $this->assertSame('105000000', (string) $changedProduct->currentPrice()->first()->raw_price_rial);
+        $this->assertSame('71000000', (string) $linkedProduct->currentPrice()->first()->raw_price_rial);
+        $this->assertSame(5000000, (int) $changedProduct->fresh()->price_step_rial);
+        $this->assertSame(1000000, (int) $linkedProduct->fresh()->price_step_rial);
+        $this->assertSame(PricingMode::Derived, $linkedProduct->currentPrice()->first()->pricing_mode);
+        $this->assertSame(1, $changedProduct->fresh()->price_version);
+        $this->assertSame(1, $linkedProduct->fresh()->price_version);
+        Event::assertDispatchedTimes(PriceUpdated::class, 2);
+
+        $this->postJson("/api/v1/admin/products/{$changedProduct->id}/prices", [
+            'raw_price_rial' => '100000000',
+        ])->assertCreated();
+
+        $this->assertSame('100000000', (string) $changedProduct->currentPrice()->first()->raw_price_rial);
+        $this->assertSame('70000000', (string) $linkedProduct->currentPrice()->first()->raw_price_rial);
+        $this->assertSame(5000000, (int) $changedProduct->fresh()->price_step_rial);
+        $this->assertSame(1000000, (int) $linkedProduct->fresh()->price_step_rial);
+        Event::assertDispatchedTimes(PriceUpdated::class, 4);
+    }
+
     public function test_unauthorized_user_cannot_write_a_price(): void
     {
         Event::fake([PriceUpdated::class]);

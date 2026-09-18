@@ -132,6 +132,30 @@ export async function setAdminCategoryActive(id: string, active: boolean): Promi
     return result.ok;
 }
 
+export async function reorderAdminCategories(categoryIds: string[]): Promise<void> {
+    const previous = categories;
+    const categoriesById = new Map(previous.map((category) => [category.id, category]));
+    const reordered = categoryIds
+        .map((id) => categoriesById.get(id))
+        .filter(Boolean) as AdminCategory[];
+
+    if (reordered.length !== previous.length) {
+        throw new Error("ترتیب کامل دسته‌بندی‌ها برای ذخیره لازم است.");
+    }
+
+    setCategories(reordered);
+    try {
+        await apiRequest<{ category_ids: number[] }>("admin/categories/reorder", {
+            method: "PATCH",
+            body: JSON.stringify({ category_ids: categoryIds.map(Number) }),
+        });
+        await refreshCategories();
+    } catch (error) {
+        setCategories(previous);
+        throw error;
+    }
+}
+
 export async function deleteAdminCategory(id: string): Promise<boolean> {
     try {
         await apiRequest<null>(`admin/categories/${id}`, { method: "DELETE" });

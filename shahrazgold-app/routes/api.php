@@ -61,7 +61,9 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('users', UserController::class);
             Route::apiResource('roles', RoleController::class)->except(['create', 'edit']);
             Route::patch('users/{user}/status', [UserController::class, 'status']);
+            Route::patch('categories/reorder', [AdminCategoryController::class, 'reorder']);
             Route::apiResource('categories', AdminCategoryController::class);
+            Route::patch('products/reorder', [AdminProductController::class, 'reorder']);
             Route::patch('products/{product}/price-step', [AdminProductController::class, 'updatePriceStep']);
             Route::patch('products/{product}/trade-availability', [AdminProductController::class, 'updateTradeAvailability']);
             Route::apiResource('products', AdminProductController::class);

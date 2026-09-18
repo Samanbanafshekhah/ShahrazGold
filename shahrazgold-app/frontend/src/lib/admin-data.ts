@@ -400,6 +400,30 @@ export async function deleteAdminProduct(id: string): Promise<boolean> {
     }
 }
 
+export async function reorderAdminProducts(productIds: string[]): Promise<void> {
+    const previous = prices;
+    const productsById = new Map(previous.map((item) => [item.id, item]));
+    const reordered = productIds
+        .map((id) => productsById.get(id))
+        .filter(Boolean) as AdminPriceItem[];
+
+    if (reordered.length !== previous.length) {
+        throw new Error("ترتیب کامل محصولات برای ذخیره لازم است.");
+    }
+
+    syncProducts(reordered);
+    try {
+        await apiRequest<{ product_ids: number[] }>("admin/products/reorder", {
+            method: "PATCH",
+            body: JSON.stringify({ product_ids: productIds.map(Number) }),
+        });
+        await refreshPrices();
+    } catch (error) {
+        syncProducts(previous);
+        throw error;
+    }
+}
+
 export async function updateAdminPriceStep(id: string, priceStepToman: number): Promise<void> {
     await apiRequest(`admin/products/${id}/price-step`, {
         method: "PATCH",
@@ -431,9 +455,7 @@ export async function updateAdminTradeAvailability(
         const response = await apiRequest<ApiProduct>(`admin/products/${id}/trade-availability`, {
             method: "PATCH",
             body: JSON.stringify({
-                ...(change.buyDisabled !== undefined
-                    ? { buy_disabled: change.buyDisabled }
-                    : {}),
+                ...(change.buyDisabled !== undefined ? { buy_disabled: change.buyDisabled } : {}),
                 ...(change.sellDisabled !== undefined
                     ? { sell_disabled: change.sellDisabled }
                     : {}),

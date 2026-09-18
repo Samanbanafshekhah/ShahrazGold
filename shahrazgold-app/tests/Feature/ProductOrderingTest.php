@@ -14,6 +14,79 @@ class ProductOrderingTest extends TestCase
 {
     use CreatesDomain, RefreshDatabase;
 
+    public function test_admin_can_reorder_categories_from_price_management(): void
+    {
+        $categories = collect([
+            $this->category(['display_order' => 10]),
+            $this->category(['display_order' => 20]),
+            $this->category(['display_order' => 30]),
+        ]);
+        $newOrder = [$categories[2]->id, $categories[0]->id, $categories[1]->id];
+
+        Sanctum::actingAs($this->admin());
+
+        $this->patchJson('/api/v1/admin/categories/reorder', ['category_ids' => $newOrder])
+            ->assertOk()
+            ->assertJsonPath('data.category_ids', $newOrder);
+
+        $this->getJson('/api/v1/admin/categories?per_page=100')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $newOrder[0])
+            ->assertJsonPath('data.1.id', $newOrder[1])
+            ->assertJsonPath('data.2.id', $newOrder[2]);
+    }
+
+    public function test_admin_category_reorder_requires_the_complete_unique_order(): void
+    {
+        $categories = collect([$this->category(), $this->category(), $this->category()]);
+        Sanctum::actingAs($this->admin());
+
+        $this->patchJson('/api/v1/admin/categories/reorder', [
+            'category_ids' => [$categories[0]->id, $categories[1]->id],
+        ])->assertUnprocessable()->assertJsonValidationErrors('category_ids');
+
+        $this->patchJson('/api/v1/admin/categories/reorder', [
+            'category_ids' => [$categories[0]->id, $categories[0]->id, $categories[2]->id],
+        ])->assertUnprocessable()->assertJsonValidationErrors('category_ids.1');
+    }
+
+    public function test_admin_can_reorder_every_product_from_price_management(): void
+    {
+        $category = $this->category();
+        $products = collect([
+            $this->product(['product_category_id' => $category->id, 'display_order' => 10]),
+            $this->product(['product_category_id' => $category->id, 'display_order' => 20]),
+            $this->product(['product_category_id' => $category->id, 'display_order' => 30]),
+        ]);
+        $newOrder = [$products[2]->id, $products[0]->id, $products[1]->id];
+
+        Sanctum::actingAs($this->admin());
+
+        $this->patchJson('/api/v1/admin/products/reorder', ['product_ids' => $newOrder])
+            ->assertOk()
+            ->assertJsonPath('data.product_ids', $newOrder);
+
+        $this->getJson('/api/v1/admin/products?per_page=100')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $newOrder[0])
+            ->assertJsonPath('data.1.id', $newOrder[1])
+            ->assertJsonPath('data.2.id', $newOrder[2]);
+    }
+
+    public function test_admin_reorder_requires_the_complete_unique_product_order(): void
+    {
+        $products = collect([$this->product(), $this->product(), $this->product()]);
+        Sanctum::actingAs($this->admin());
+
+        $this->patchJson('/api/v1/admin/products/reorder', [
+            'product_ids' => [$products[0]->id, $products[1]->id],
+        ])->assertUnprocessable()->assertJsonValidationErrors('product_ids');
+
+        $this->patchJson('/api/v1/admin/products/reorder', [
+            'product_ids' => [$products[0]->id, $products[0]->id, $products[2]->id],
+        ])->assertUnprocessable()->assertJsonValidationErrors('product_ids.1');
+    }
+
     public function test_authorized_mobile_can_save_the_global_product_order_for_every_user(): void
     {
         [$products, $role] = $this->visibleProductsWithCustomerRole();

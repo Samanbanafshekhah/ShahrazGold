@@ -15,7 +15,9 @@ use App\Services\AuditService;
 use App\Services\Pricing\PriceFormulaRegistry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -25,9 +27,44 @@ class ProductController extends Controller
         $q->when($request->filled('search'), fn ($x) => $x->where(fn ($s) => $s->whereLike('name', '%'.$request->search.'%')->orWhereLike('symbol', '%'.$request->search.'%')))
             ->when($request->filled('category_id'), fn ($x) => $x->where('product_category_id', $request->category_id))->when($request->has('is_active'), fn ($x) => $x->where('is_active', $request->boolean('is_active')))
             ->when($request->has('is_buyable'), fn ($x) => $x->where('is_buyable', $request->boolean('is_buyable')))->when($request->has('is_sellable'), fn ($x) => $x->where('is_sellable', $request->boolean('is_sellable')))
-            ->when($request->filled('pricing_mode'), fn ($x) => $x->where('pricing_mode', $request->pricing_mode))->orderBy('created_at', $request->input('sort') === 'oldest' ? 'asc' : 'desc');
+            ->when($request->filled('pricing_mode'), fn ($x) => $x->where('pricing_mode', $request->pricing_mode))
+            ->orderBy('display_order')->orderBy('id');
 
         return $this->paginated($q->paginate(min($request->integer('per_page', 15), 100)), fn ($p) => (new ProductResource($p))->resolve($request));
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'product_ids' => ['required', 'array', 'min:1'],
+            'product_ids.*' => [
+                'required',
+                'integer',
+                'distinct:strict',
+                Rule::exists('products', 'id')->whereNull('deleted_at'),
+            ],
+        ]);
+        $productIds = array_map('intval', $validated['product_ids']);
+        $allProductIds = Product::query()->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        if (count($productIds) !== count($allProductIds)
+            || array_diff($productIds, $allProductIds)
+            || array_diff($allProductIds, $productIds)) {
+            return response()->json([
+                'message' => 'The complete product order is required.',
+                'errors' => ['product_ids' => ['The complete product order is required.']],
+            ], 422);
+        }
+
+        DB::transaction(function () use ($productIds): void {
+            Product::query()->lockForUpdate()->get(['id']);
+
+            foreach ($productIds as $index => $productId) {
+                Product::query()->whereKey($productId)->update(['display_order' => $index + 1]);
+            }
+        }, 3);
+
+        return $this->success(['product_ids' => $productIds], 'Product order updated.');
     }
 
     public function store(ProductRequest $request, PriceFormulaRegistry $registry, AuditService $audit): JsonResponse

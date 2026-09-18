@@ -8,7 +8,9 @@ use App\Models\ProductCategory;
 use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
@@ -17,6 +19,45 @@ class CategoryController extends Controller
         $q = ProductCategory::query()->orderBy('display_order')->orderBy('id');
 
         return $this->paginated($q->paginate(min($request->integer('per_page', 15), 100)), fn ($c) => $this->data($c));
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'category_ids' => ['required', 'array', 'min:1'],
+            'category_ids.*' => [
+                'required',
+                'integer',
+                'distinct:strict',
+                Rule::exists('product_categories', 'id')->whereNull('deleted_at'),
+            ],
+        ]);
+        $categoryIds = array_map('intval', $validated['category_ids']);
+        $allCategoryIds = ProductCategory::query()
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (count($categoryIds) !== count($allCategoryIds)
+            || array_diff($categoryIds, $allCategoryIds)
+            || array_diff($allCategoryIds, $categoryIds)) {
+            return response()->json([
+                'message' => 'The complete category order is required.',
+                'errors' => ['category_ids' => ['The complete category order is required.']],
+            ], 422);
+        }
+
+        DB::transaction(function () use ($categoryIds): void {
+            ProductCategory::query()->lockForUpdate()->get(['id']);
+
+            foreach ($categoryIds as $index => $categoryId) {
+                ProductCategory::query()->whereKey($categoryId)->update([
+                    'display_order' => $index + 1,
+                ]);
+            }
+        }, 3);
+
+        return $this->success(['category_ids' => $categoryIds], 'Category order updated.');
     }
 
     public function store(CategoryRequest $request, AuditService $audit): JsonResponse
