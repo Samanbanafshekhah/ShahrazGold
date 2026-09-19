@@ -44,7 +44,7 @@ class TradeAndPurchaseRequestTest extends TestCase
         [$product] = $this->pricedProduct();
         $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1.25', 'raw_unit_price_rial' => '1'])->assertStatus(422);
         $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1.25'])->assertOk()->assertJsonPath('data.raw_unit_price_rial', '100000000')->assertJsonPath('data.final_unit_price_rial', '100000000')->assertJsonPath('data.total_amount_rial', '126250000');
-        $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_sell', 'entry_mode' => 'amount', 'amount_rial' => '198000000'])->assertOk()->assertJsonPath('data.final_unit_price_rial', '100000000')->assertJsonPath('data.total_amount_rial', '199980000')->assertJsonPath('data.quantity', '1.98');
+        $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_sell', 'entry_mode' => 'amount', 'amount_rial' => '198000000'])->assertOk()->assertJsonPath('data.final_unit_price_rial', '100000000')->assertJsonPath('data.adjustment_percent', '-1.0000')->assertJsonPath('data.total_amount_rial', '196020000')->assertJsonPath('data.quantity', '1.98');
         $product->update(['trade_adjustment_enabled' => false]);
         $this->postJson('/api/v1/trade/preview', ['product_id' => $product->id, 'trade_type' => 'customer_buy', 'entry_mode' => 'quantity', 'quantity' => '1'])->assertJsonPath('data.final_unit_price_rial', '100000000')->assertJsonPath('data.total_amount_rial', '101000000');
     }

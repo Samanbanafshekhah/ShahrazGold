@@ -14,6 +14,7 @@ interface ApiProduct {
     sell_price_difference_rial: string;
     trade_amount_divisor: string | null;
     final_amount_multiplier: string;
+    sell_final_amount_multiplier: string;
     price_version: number;
     price_adjustment_version: number;
     current_price: {
@@ -126,6 +127,7 @@ function mapProduct(product: ApiProduct): GoldAsset {
         sellPriceDifference,
         tradeAmountDivisor: Number(product.trade_amount_divisor ?? 1),
         finalAmountMultiplier: Number(product.final_amount_multiplier ?? 1),
+        sellFinalAmountMultiplier: Number(product.sell_final_amount_multiplier ?? 1),
         buyDisabled: Boolean(product.buy_disabled),
         sellDisabled: Boolean(product.sell_disabled),
     };
@@ -188,6 +190,7 @@ function preserveNewerPrice(snapshot: GoldAsset, current?: GoldAsset): GoldAsset
         sellPriceDifference: current.sellPriceDifference,
         tradeAmountDivisor: current.tradeAmountDivisor,
         finalAmountMultiplier: current.finalAmountMultiplier,
+        sellFinalAmountMultiplier: current.sellFinalAmountMultiplier,
         buyDisabled: current.buyDisabled,
         sellDisabled: current.sellDisabled,
     };

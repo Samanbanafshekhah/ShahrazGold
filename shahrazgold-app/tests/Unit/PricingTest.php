@@ -49,7 +49,7 @@ class PricingTest extends TestCase
     }
 
     #[Test]
-    public function product_one_adds_one_percent_to_final_buy_and_sell_amounts_only(): void
+    public function product_one_adds_one_percent_to_buy_and_subtracts_one_percent_from_sell(): void
     {
         $target = new Product([
             'unit' => ProductUnit::Gram,
@@ -76,11 +76,11 @@ class PricingTest extends TestCase
         $this->assertSame('10000000', $otherBuy['final_unit_price_rial']);
         $this->assertSame('9000000', $otherSell['final_unit_price_rial']);
         $this->assertSame('10100000', $targetBuy['total_amount_rial']);
-        $this->assertSame('9090000', $targetSell['total_amount_rial']);
+        $this->assertSame('8910000', $targetSell['total_amount_rial']);
         $this->assertSame('10000000', $otherBuy['total_amount_rial']);
         $this->assertSame('9000000', $otherSell['total_amount_rial']);
         $this->assertSame('1.0000', $targetBuy['adjustment_percent']);
-        $this->assertSame('1.0000', $targetSell['adjustment_percent']);
+        $this->assertSame('-1.0000', $targetSell['adjustment_percent']);
         $this->assertSame('0', $otherBuy['adjustment_percent']);
         $this->assertSame('0', $otherSell['adjustment_percent']);
     }

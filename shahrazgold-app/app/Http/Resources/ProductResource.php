@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\TradeType;
 use App\Services\Pricing\CustomerUnitPriceService;
 use App\Services\Pricing\DecimalMath;
 use App\Services\Pricing\ProductFinalAmountService;
@@ -33,6 +34,7 @@ class ProductResource extends JsonResource
             'sell_price_difference_rial' => (string) $this->sell_price_difference_rial,
             'trade_amount_divisor' => $customerUnitPrices->divisor($this->resource),
             'final_amount_multiplier' => $productFinalAmounts->multiplier($this->resource),
+            'sell_final_amount_multiplier' => $productFinalAmounts->multiplier($this->resource, TradeType::CustomerSell),
             'price_version' => (int) $this->price_version,
             'price_adjustment_version' => (int) ($roleProduct?->pivot?->price_version ?? 0),
             'price_source_id' => $this->when($request->user()?->isAdmin(), $this->price_source_id),

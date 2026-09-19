@@ -55,12 +55,12 @@ final class TradePriceCalculator
         }
 
         // Product-specific adjustments apply only to the final order amount.
-        $total = $this->productFinalAmounts->apply($product, $calculatedTotal);
+        $total = $this->productFinalAmounts->apply($product, $calculatedTotal, $tradeType);
 
         return [
             'product_price_id' => $price->id,
             'raw_unit_price_rial' => $raw,
-            'adjustment_percent' => $this->productFinalAmounts->percent($product),
+            'adjustment_percent' => $this->productFinalAmounts->percent($product, $tradeType),
             'adjustment_amount_rial' => $normalAdjustment,
             'role_price_adjustment_rial' => $roleAdjustment,
             'final_unit_price_rial' => $final,

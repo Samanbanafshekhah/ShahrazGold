@@ -40,7 +40,10 @@ export function purchaseProductFromAsset(
         unit: asset.unit,
         unitPrice: asset.currency === "IRR" ? (price ?? 0) / 10 : (price ?? 0),
         amountDivisor: asset.tradeAmountDivisor ?? 1,
-        finalAmountMultiplier: asset.finalAmountMultiplier ?? 1,
+        finalAmountMultiplier:
+            action === "sell"
+                ? (asset.sellFinalAmountMultiplier ?? 1)
+                : (asset.finalAmountMultiplier ?? 1),
         priceUnit: asset.currency === "IRR" ? "تومان" : "دلار",
         updatedAt: asset.updatedAt,
         change: asset.change,

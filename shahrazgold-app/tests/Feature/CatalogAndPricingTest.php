@@ -55,7 +55,8 @@ class CatalogAndPricingTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.current_price.buy_price_rial', '90000000')
             ->assertJsonPath('data.current_price.sell_price_rial', '90000000')
-            ->assertJsonPath('data.final_amount_multiplier', '1.01');
+            ->assertJsonPath('data.final_amount_multiplier', '1.01')
+            ->assertJsonPath('data.sell_final_amount_multiplier', '0.99');
         $this->postJson("/api/v1/admin/products/{$derived->id}/prices", ['raw_price_rial' => '90000000'])->assertStatus(409);
         $empty = $this->product(['slug' => 'no-price', 'symbol' => 'NOPRICE']);
         $this->getJson('/api/v1/products/no-price')->assertOk()->assertJsonPath('data.current_price', null)->assertJsonPath('data.is_price_available', false);

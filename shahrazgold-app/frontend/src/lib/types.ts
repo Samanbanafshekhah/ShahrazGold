@@ -26,6 +26,7 @@ export interface GoldAsset {
     sellPriceDifference?: number;
     tradeAmountDivisor?: number;
     finalAmountMultiplier?: number;
+    sellFinalAmountMultiplier?: number;
     buyDisabled?: boolean;
     sellDisabled?: boolean;
 }
