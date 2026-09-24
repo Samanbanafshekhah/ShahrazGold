@@ -5,10 +5,13 @@ import {
     Loader2,
     Mail,
     MonitorSmartphone,
+    Pencil,
     Phone,
     Plus,
     Search,
+    Save,
     ShieldCheck,
+    Trash2,
     UserCheck,
     UserPlus,
     Users,
@@ -17,6 +20,16 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminPage } from "@/components/admin/admin-page";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -149,9 +162,12 @@ function UsersPage() {
     const [roleFilter, setRoleFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
     const [form, setForm] = useState<UserForm>(EMPTY_FORM);
     const [errors, setErrors] = useState<UserFormErrors>({});
     const [submitting, setSubmitting] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
@@ -168,7 +184,9 @@ function UsersPage() {
 
     useEffect(() => {
         void loadUsers();
-        void apiRequest<ApiRole[]>("admin/roles").then((response) => setRoles(response.data.filter((role) => role.is_active))).catch(() => undefined);
+        void apiRequest<ApiRole[]>("admin/roles")
+            .then((response) => setRoles(response.data.filter((role) => role.is_active)))
+            .catch(() => undefined);
     }, [loadUsers]);
 
     const filteredUsers = useMemo(() => {
@@ -189,7 +207,20 @@ function UsersPage() {
     const adminCount = users.filter((user) => user.role === "admin").length;
 
     function openCreateDialog() {
+        setEditingUser(null);
         setForm(EMPTY_FORM);
+        setErrors({});
+        setDialogOpen(true);
+    }
+
+    function openEditDialog(user: AdminUser) {
+        setEditingUser(user);
+        setForm({
+            ...EMPTY_FORM,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            mobile: user.mobile,
+        });
         setErrors({});
         setDialogOpen(true);
     }
@@ -207,6 +238,13 @@ function UsersPage() {
             next.lastName = "نام خانوادگی باید حداقل ۲ کاراکتر باشد.";
         const mobile = normalizeMobile(form.mobile);
         if (!/^09\d{9}$/.test(mobile)) next.mobile = "شماره موبایل باید با ۰۹ شروع و ۱۱ رقم باشد.";
+        if (editingUser) {
+            if (form.password && form.password.length < 8)
+                next.password = "رمز عبور باید حداقل ۸ کاراکتر باشد.";
+            if (form.password !== form.passwordConfirmation)
+                next.passwordConfirmation = "تکرار رمز عبور مطابقت ندارد.";
+            return next;
+        }
         if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
             next.email = "ایمیل واردشده معتبر نیست.";
         if (form.password.length < 8) next.password = "رمز عبور باید حداقل ۸ کاراکتر باشد.";
@@ -223,28 +261,62 @@ function UsersPage() {
 
         setSubmitting(true);
         try {
-            const response = await apiRequest<ApiUser>("admin/users", {
-                method: "POST",
-                body: JSON.stringify({
-                    first_name: form.firstName.trim(),
-                    last_name: form.lastName.trim(),
-                    mobile: normalizeMobile(form.mobile),
-                    email: form.email.trim() || null,
-                    password: form.password,
-                    password_confirmation: form.passwordConfirmation,
-                    role: roles.find((role) => role.slug === form.role)?.slug === 'admin' ? 'admin' : 'customer',
-                    role_id: roles.find((role) => role.slug === form.role)?.id,
-                    is_active: form.active,
-                }),
-            });
+            const identity = {
+                first_name: form.firstName.trim(),
+                last_name: form.lastName.trim(),
+                mobile: normalizeMobile(form.mobile),
+            };
+            const response = await apiRequest<ApiUser>(
+                editingUser ? `admin/users/${editingUser.id}` : "admin/users",
+                {
+                    method: editingUser ? "PATCH" : "POST",
+                    body: JSON.stringify(
+                        editingUser
+                            ? {
+                                  ...identity,
+                                  ...(form.password
+                                      ? {
+                                            password: form.password,
+                                            password_confirmation: form.passwordConfirmation,
+                                        }
+                                      : {}),
+                              }
+                            : {
+                                  ...identity,
+                                  email: form.email.trim() || null,
+                                  password: form.password,
+                                  password_confirmation: form.passwordConfirmation,
+                                  role:
+                                      roles.find((role) => role.slug === form.role)?.slug ===
+                                      "admin"
+                                          ? "admin"
+                                          : "customer",
+                                  role_id: roles.find((role) => role.slug === form.role)?.id,
+                                  is_active: form.active,
+                              },
+                    ),
+                },
+            );
             const user = mapUser(response.data);
-            setUsers((current) => [user, ...current]);
-            toast.success(`کاربر «${fullName(user)}» با موفقیت ایجاد شد.`);
+            setUsers((current) =>
+                editingUser
+                    ? current.map((item) => (item.id === user.id ? user : item))
+                    : [user, ...current],
+            );
+            toast.success(
+                editingUser
+                    ? `اطلاعات کاربر «${fullName(user)}» ویرایش شد.`
+                    : `کاربر «${fullName(user)}» با موفقیت ایجاد شد.`,
+            );
             setDialogOpen(false);
+            setEditingUser(null);
             setForm(EMPTY_FORM);
         } catch (error) {
             const nextErrors: UserFormErrors = {
-                general: apiErrorMessage(error, "ایجاد کاربر ناموفق بود."),
+                general: apiErrorMessage(
+                    error,
+                    editingUser ? "ویرایش کاربر ناموفق بود." : "ایجاد کاربر ناموفق بود.",
+                ),
             };
             if (error instanceof ApiError && error.errors) {
                 const fieldMap: Record<string, keyof UserForm> = {
@@ -265,6 +337,21 @@ function UsersPage() {
             setErrors(nextErrors);
         } finally {
             setSubmitting(false);
+        }
+    }
+
+    async function confirmDelete() {
+        if (!deleteTarget || deleting) return;
+        setDeleting(true);
+        try {
+            await apiRequest<null>(`admin/users/${deleteTarget.id}`, { method: "DELETE" });
+            setUsers((current) => current.filter((user) => user.id !== deleteTarget.id));
+            toast.success(`کاربر «${fullName(deleteTarget)}» حذف شد.`);
+            setDeleteTarget(null);
+        } catch (error) {
+            toast.error(apiErrorMessage(error, "حذف کاربر ناموفق بود."));
+        } finally {
+            setDeleting(false);
         }
     }
 
@@ -301,10 +388,7 @@ function UsersPage() {
                                 className="h-10 ps-10"
                             />
                         </div>
-                        <Select
-                            value={roleFilter}
-                            onValueChange={setRoleFilter}
-                        >
+                        <Select value={roleFilter} onValueChange={setRoleFilter}>
                             <SelectTrigger className="h-10">
                                 <SelectValue placeholder="نقش" />
                             </SelectTrigger>
@@ -364,7 +448,11 @@ function UsersPage() {
                         </p>
                     </div>
                 ) : (
-                    <UserList users={filteredUsers} />
+                    <UserList
+                        users={filteredUsers}
+                        onEdit={openEditDialog}
+                        onDelete={setDeleteTarget}
+                    />
                 )}
             </section>
 
@@ -382,11 +470,19 @@ function UsersPage() {
                     <form onSubmit={submitUser}>
                         <DialogHeader>
                             <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-gold-soft text-[color:var(--gold-dark)]">
-                                <UserPlus className="h-5 w-5" />
+                                {editingUser ? (
+                                    <Pencil className="h-5 w-5" />
+                                ) : (
+                                    <UserPlus className="h-5 w-5" />
+                                )}
                             </div>
-                            <DialogTitle>تعریف کاربر جدید</DialogTitle>
+                            <DialogTitle>
+                                {editingUser ? "ویرایش کاربر" : "تعریف کاربر جدید"}
+                            </DialogTitle>
                             <DialogDescription>
-                                اطلاعات هویتی و سطح دسترسی کاربر را وارد کنید.
+                                {editingUser
+                                    ? "نام، شماره موبایل و در صورت نیاز رمز عبور کاربر را ویرایش کنید."
+                                    : "اطلاعات هویتی و سطح دسترسی کاربر را وارد کنید."}
                             </DialogDescription>
                         </DialogHeader>
 
@@ -447,29 +543,31 @@ function UsersPage() {
                                     aria-invalid={Boolean(errors.mobile)}
                                 />
                             </FormField>
+                            {!editingUser && (
+                                <FormField
+                                    label="ایمیل (اختیاری)"
+                                    htmlFor="user-email"
+                                    error={errors.email}
+                                >
+                                    <Input
+                                        id="user-email"
+                                        type="email"
+                                        dir="ltr"
+                                        value={form.email}
+                                        onChange={(event) =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                email: event.target.value,
+                                            }))
+                                        }
+                                        placeholder="user@example.com"
+                                        className="text-left"
+                                        aria-invalid={Boolean(errors.email)}
+                                    />
+                                </FormField>
+                            )}
                             <FormField
-                                label="ایمیل (اختیاری)"
-                                htmlFor="user-email"
-                                error={errors.email}
-                            >
-                                <Input
-                                    id="user-email"
-                                    type="email"
-                                    dir="ltr"
-                                    value={form.email}
-                                    onChange={(event) =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            email: event.target.value,
-                                        }))
-                                    }
-                                    placeholder="user@example.com"
-                                    className="text-left"
-                                    aria-invalid={Boolean(errors.email)}
-                                />
-                            </FormField>
-                            <FormField
-                                label="رمز عبور"
+                                label={editingUser ? "رمز عبور جدید (اختیاری)" : "رمز عبور"}
                                 htmlFor="user-password"
                                 error={errors.password}
                             >
@@ -489,7 +587,7 @@ function UsersPage() {
                                 />
                             </FormField>
                             <FormField
-                                label="تکرار رمز عبور"
+                                label={editingUser ? "تکرار رمز عبور جدید" : "تکرار رمز عبور"}
                                 htmlFor="user-password-confirmation"
                                 error={errors.passwordConfirmation}
                             >
@@ -508,41 +606,51 @@ function UsersPage() {
                                     aria-invalid={Boolean(errors.passwordConfirmation)}
                                 />
                             </FormField>
-                            <FormField label="نقش کاربر" htmlFor="user-role" error={errors.role}>
-                                <Select
-                                    value={form.role}
-                                    onValueChange={(role) =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            role,
-                                        }))
-                                    }
+                            {!editingUser && (
+                                <FormField
+                                    label="نقش کاربر"
+                                    htmlFor="user-role"
+                                    error={errors.role}
                                 >
-                                    <SelectTrigger id="user-role">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent dir="rtl">
-                                        {roles.map((role) => (
-                                            <SelectItem key={role.slug} value={role.slug}>{role.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
-                            <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
-                                <div>
-                                    <Label htmlFor="user-active">وضعیت حساب</Label>
-                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                        کاربر فعال امکان ورود به حساب را دارد.
-                                    </p>
+                                    <Select
+                                        value={form.role}
+                                        onValueChange={(role) =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                role,
+                                            }))
+                                        }
+                                    >
+                                        <SelectTrigger id="user-role">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent dir="rtl">
+                                            {roles.map((role) => (
+                                                <SelectItem key={role.slug} value={role.slug}>
+                                                    {role.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormField>
+                            )}
+                            {!editingUser && (
+                                <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
+                                    <div>
+                                        <Label htmlFor="user-active">وضعیت حساب</Label>
+                                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                            کاربر فعال امکان ورود به حساب را دارد.
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        id="user-active"
+                                        checked={form.active}
+                                        onCheckedChange={(active) =>
+                                            setForm((current) => ({ ...current, active }))
+                                        }
+                                    />
                                 </div>
-                                <Switch
-                                    id="user-active"
-                                    checked={form.active}
-                                    onCheckedChange={(active) =>
-                                        setForm((current) => ({ ...current, active }))
-                                    }
-                                />
-                            </div>
+                            )}
                         </div>
 
                         {errors.general && (
@@ -563,15 +671,52 @@ function UsersPage() {
                             <Button type="submit" disabled={submitting}>
                                 {submitting ? (
                                     <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                                ) : editingUser ? (
+                                    <Save className="me-2 h-4 w-4" />
                                 ) : (
                                     <Plus className="me-2 h-4 w-4" />
                                 )}
-                                ایجاد کاربر
+                                {editingUser ? "ذخیره تغییرات" : "ایجاد کاربر"}
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog
+                open={Boolean(deleteTarget)}
+                onOpenChange={(open) => {
+                    if (!open && !deleting) setDeleteTarget(null);
+                }}
+            >
+                <AlertDialogContent dir="rtl" className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>حذف کاربر</AlertDialogTitle>
+                        <AlertDialogDescription className="leading-6">
+                            {deleteTarget && (
+                                <>
+                                    با زدن این دکمه کاربر «{fullName(deleteTarget)}» حذف می‌شود. آیا
+                                    مطمئن هستید؟
+                                </>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2 sm:space-x-0">
+                        <AlertDialogCancel disabled={deleting}>انصراف</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(event) => {
+                                event.preventDefault();
+                                void confirmDelete();
+                            }}
+                            disabled={deleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {deleting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                            تأیید حذف
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AdminPage>
     );
 }
@@ -639,7 +784,15 @@ function OnlineUsers({ users }: { users: ReturnType<typeof useAdminOnlineUsers> 
     );
 }
 
-function UserList({ users }: { users: AdminUser[] }) {
+function UserList({
+    users,
+    onEdit,
+    onDelete,
+}: {
+    users: AdminUser[];
+    onEdit: (user: AdminUser) => void;
+    onDelete: (user: AdminUser) => void;
+}) {
     return (
         <>
             <div className="hidden overflow-x-auto md:block">
@@ -652,6 +805,7 @@ function UserList({ users }: { users: AdminUser[] }) {
                             <th className="p-3 font-medium">وضعیت</th>
                             <th className="p-3 font-medium">آخرین ورود</th>
                             <th className="p-3 font-medium">تاریخ عضویت</th>
+                            <th className="p-3 font-medium">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -677,6 +831,9 @@ function UserList({ users }: { users: AdminUser[] }) {
                                 <td className="p-3 text-xs text-muted-foreground">
                                     {formatPersianDate(user.createdAt)}
                                 </td>
+                                <td className="p-3">
+                                    <UserActions user={user} onEdit={onEdit} onDelete={onDelete} />
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -698,10 +855,52 @@ function UserList({ users }: { users: AdminUser[] }) {
                                 عضویت {formatPersianDate(user.createdAt)}
                             </span>
                         </div>
+                        <UserActions user={user} onEdit={onEdit} onDelete={onDelete} mobile />
                     </article>
                 ))}
             </div>
         </>
+    );
+}
+
+function UserActions({
+    user,
+    onEdit,
+    onDelete,
+    mobile = false,
+}: {
+    user: AdminUser;
+    onEdit: (user: AdminUser) => void;
+    onDelete: (user: AdminUser) => void;
+    mobile?: boolean;
+}) {
+    return (
+        <div
+            className={`flex items-center gap-2 ${mobile ? "border-t border-border/60 pt-3" : ""}`}
+        >
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={mobile ? "flex-1" : "h-8 px-2.5"}
+                onClick={() => onEdit(user)}
+                aria-label={`ویرایش ${fullName(user)}`}
+            >
+                <Pencil className="me-1.5 h-3.5 w-3.5" />
+                ویرایش
+            </Button>
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={`${mobile ? "flex-1" : "h-8 px-2.5"} border-negative/30 text-negative hover:bg-negative-soft hover:text-negative`}
+                onClick={() => onDelete(user)}
+                aria-label={`حذف ${fullName(user)}`}
+            >
+                <Trash2 className="me-1.5 h-3.5 w-3.5" />
+                حذف
+            </Button>
+        </div>
     );
 }
 

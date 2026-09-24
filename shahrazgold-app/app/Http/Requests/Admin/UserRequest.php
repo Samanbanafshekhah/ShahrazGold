@@ -19,11 +19,25 @@ class UserRequest extends FormRequest
         $target = $this->route('user');
         $id = is_object($target) ? $target->id : $target;
 
+        if (! $this->isMethod('post')) {
+            return [
+                'first_name' => ['required', 'string', 'max:100'],
+                'last_name' => ['required', 'string', 'max:100'],
+                'mobile' => ['required', 'regex:/^09\d{9}$/', Rule::unique('users')->ignore($id)],
+                'email' => ['prohibited'],
+                'password' => ['nullable', 'confirmed', Password::min(8)],
+                'password_confirmation' => ['nullable'],
+                'role' => ['prohibited'],
+                'role_id' => ['prohibited'],
+                'is_active' => ['prohibited'],
+            ];
+        }
+
         return [
             'first_name' => ['required', 'string', 'max:100'], 'last_name' => ['required', 'string', 'max:100'],
             'mobile' => ['required', 'regex:/^09\d{9}$/', Rule::unique('users')->ignore($id)],
             'email' => ['nullable', 'email:rfc', 'max:255', Rule::unique('users')->ignore($id)],
-            'password' => [$this->isMethod('post') ? 'required' : 'nullable', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', Password::min(8)],
             'role' => ['required', Rule::enum(UserRole::class)], 'role_id' => ['nullable', 'integer', 'exists:roles,id'], 'is_active' => ['sometimes', 'boolean'],
         ];
     }

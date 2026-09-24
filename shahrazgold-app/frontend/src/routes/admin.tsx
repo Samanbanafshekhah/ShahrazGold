@@ -6,6 +6,7 @@ import { AdminRequestCenter } from "@/components/admin/admin-request-center";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { useAdminSession } from "@/lib/admin-auth";
 import { refreshAdminRequests, useAdminRequests } from "@/lib/admin-data";
+import { playNotificationSound, prepareNotificationSound } from "@/lib/notification-sound";
 
 interface AdminOutletContextValue {
     openMenu: () => void;
@@ -69,6 +70,8 @@ function AuthenticatedAdminLayout() {
     const knownRequestIds = useRef<Set<string> | null>(null);
     const polling = useRef(false);
 
+    useEffect(() => prepareNotificationSound(), []);
+
     useEffect(() => {
         let cancelled = false;
 
@@ -93,6 +96,7 @@ function AuthenticatedAdminLayout() {
 
                 if (incoming.length > 0) {
                     setRequestSignal((signal) => signal + 1);
+                    playNotificationSound();
                     incoming.forEach((request) => {
                         const isSell = request.tradeType === "sell";
                         toast(isSell ? "درخواست فروش جدید" : "درخواست خرید جدید", {

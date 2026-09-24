@@ -164,4 +164,42 @@ class AuthenticationAndAccessTest extends TestCase
         $user = User::where('mobile', '09128888888')->firstOrFail();
         $this->assertTrue(Hash::check('secure123', $user->password));
     }
+
+    public function test_admin_can_edit_user_name_mobile_and_password(): void
+    {
+        Sanctum::actingAs($this->admin());
+        $user = $this->customer(['password' => 'original-password']);
+        $this->patchJson('/api/v1/admin/users/'.$user->id, [
+            'first_name' => 'نام جدید',
+            'last_name' => 'نام خانوادگی جدید',
+            'mobile' => '09127777777',
+        ])->assertOk()
+            ->assertJsonPath('data.first_name', 'نام جدید')
+            ->assertJsonPath('data.last_name', 'نام خانوادگی جدید')
+            ->assertJsonPath('data.mobile', '09127777777');
+
+        $password = $user->fresh()->password;
+
+        $this->patchJson('/api/v1/admin/users/'.$user->id, [
+            'first_name' => 'نام جدید',
+            'last_name' => 'نام خانوادگی جدید',
+            'mobile' => '09127777777',
+            'password' => 'changed-password',
+            'password_confirmation' => 'changed-password',
+        ])->assertOk();
+
+        $updated = $user->fresh();
+        $this->assertNotSame($password, $updated->password);
+        $this->assertTrue(Hash::check('changed-password', $updated->password));
+    }
+
+    public function test_admin_can_delete_another_user(): void
+    {
+        Sanctum::actingAs($this->admin());
+        $user = $this->customer();
+
+        $this->deleteJson('/api/v1/admin/users/'.$user->id)->assertOk();
+
+        $this->assertSoftDeleted($user);
+    }
 }

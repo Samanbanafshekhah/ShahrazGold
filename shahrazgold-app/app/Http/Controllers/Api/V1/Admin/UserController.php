@@ -53,7 +53,9 @@ class UserController extends Controller
             if (empty($data['password'])) {
                 unset($data['password']);
             }
-            $demoting = $locked->role === UserRole::Admin && ($data['role'] ?? null) !== UserRole::Admin->value;
+            $demoting = $locked->role === UserRole::Admin
+                && array_key_exists('role', $data)
+                && $data['role'] !== UserRole::Admin->value;
             $deactivating = $locked->is_active && array_key_exists('is_active', $data) && ! $data['is_active'];
             if (($demoting || $deactivating) && $activeAdmins->count() <= 1) {
                 abort(409, 'The last active administrator cannot be changed.');

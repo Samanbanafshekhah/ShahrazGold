@@ -10,6 +10,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { purchaseProductFromAsset, type TradeAction } from "@/lib/purchase";
 import { Info } from "lucide-react";
 import { useMarketAnnouncement } from "@/lib/market-api";
+import { playNotificationSound, prepareNotificationSound } from "@/lib/notification-sound";
 
 export const Route = createFileRoute("/dashboard")({
     component: DashboardPage,
@@ -41,6 +42,8 @@ function DashboardPage() {
             }, undefined),
         [assets],
     );
+
+    useEffect(() => prepareNotificationSound(), []);
 
     async function onRefresh() {
         setRefreshing(true);
@@ -102,6 +105,8 @@ function DashboardPage() {
         knownRequestStatuses.current = new Map(
             transactions.map((transaction) => [transaction.id, transaction.status]),
         );
+
+        if (changedRequests.length > 0) playNotificationSound();
 
         changedRequests.forEach((transaction) => {
             const approved = transaction.status === "approved";
