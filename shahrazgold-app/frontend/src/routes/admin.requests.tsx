@@ -102,7 +102,8 @@ function RequestsPage() {
             toast.error(error instanceof Error ? error.message : "تأیید درخواست ناموفق بود.");
             return;
         }
-        toast.success(`درخواست ${r.code} تایید شد.`);
+        // toast.success(`درخواست ${r.code} تایید شد.`);
+        toast.success("درخواست تایید شد.");
         setSelected((cur) => (cur ? { ...cur, status: "approved" } : cur));
     }
     async function doReject() {
@@ -117,7 +118,8 @@ function RequestsPage() {
             toast.error(error instanceof Error ? error.message : "رد درخواست ناموفق بود.");
             return;
         }
-        toast.success(`درخواست ${selected.code} رد شد.`);
+        // toast.success(`درخواست ${selected.code} رد شد.`);
+        toast.success("درخواست رد شد.");
         setSelected((cur) =>
             cur ? { ...cur, status: "rejected", rejectionReason: rejectReason.trim() } : cur,
         );
@@ -132,7 +134,7 @@ function RequestsPage() {
                 <div className="relative md:col-span-2">
                     <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        placeholder="جستجو بر اساس نام، موبایل یا شماره درخواست..."
+                        placeholder="جستجو بر اساس نام یا موبایل..."
                         value={q}
                         onChange={(e) => {
                             setQ(e.target.value);
@@ -216,7 +218,7 @@ function RequestsPage() {
                         <table className="w-full min-w-[900px] text-right text-sm">
                             <thead className="bg-muted/40 text-xs text-muted-foreground">
                                 <tr>
-                                    <th className="p-3 font-medium">شماره</th>
+                                    {/* <th className="p-3 font-medium">شماره</th> */}
                                     <th className="p-3 font-medium">مشتری / نوع درخواست</th>
                                     <th className="p-3 font-medium">موبایل</th>
                                     <th className="p-3 font-medium">محصول</th>
@@ -239,7 +241,7 @@ function RequestsPage() {
                                                 : "border-[color:var(--positive)]/25 bg-trade-buy hover:bg-trade-buy")
                                         }
                                     >
-                                        <td className="p-3 font-mono text-xs">{r.code}</td>
+                                        {/* <td className="p-3 font-mono text-xs">{r.code}</td> */}
                                         <td className="p-3">
                                             <div className="font-bold">{r.buyerName}</div>
                                             <div
@@ -311,12 +313,12 @@ function RequestsPage() {
                                         >
                                             درخواست {r.tradeType === "sell" ? "فروش" : "خرید"}
                                         </div>
-                                        <div
+                                        {/* <div
                                             className="mt-1 font-mono text-[11px] text-muted-foreground"
                                             dir="ltr"
                                         >
                                             {r.code}
-                                        </div>
+                                        </div> */}
                                     </div>
                                     <RequestStatusBadge status={r.status} />
                                 </div>
@@ -423,7 +425,7 @@ function RequestsPage() {
                         <>
                             <SheetHeader>
                                 <SheetTitle className="text-right">
-                                    جزئیات درخواست {selected.code}
+                                    جزئیات درخواست {/* {selected.code} */}
                                 </SheetTitle>
                                 <SheetDescription className="text-right">
                                     ثبت‌شده در {formatPersianDate(selected.createdAt)} ساعت{" "}

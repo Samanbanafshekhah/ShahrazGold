@@ -1,0 +1,44 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e196]:
+    - banner [ref=e197]:
+      - generic [ref=e198]:
+        - link "شهراز‌گلد ShahrazGold" [ref=e199] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e201]:
+            - generic [ref=e202]: شهراز‌گلد
+            - generic [ref=e203]: ShahrazGold
+        - link "بازگشت به سایت" [ref=e204] [cursor=pointer]:
+          - /url: /
+    - generic [ref=e205]:
+      - generic [ref=e206]:
+        - heading "ورود به حساب کاربری" [level=1] [ref=e207]
+        - paragraph [ref=e208]: برای مشاهده قیمت‌ها و تراکنش‌ها وارد شوید.
+        - generic [ref=e210]:
+          - generic [ref=e211]:
+            - text: شماره موبایل
+            - textbox "شماره موبایل" [ref=e212]:
+              - /placeholder: 09xxxxxxxxx
+          - generic [ref=e213]:
+            - text: رمز عبور
+            - generic [ref=e214]:
+              - textbox "رمز عبور" [ref=e215]
+              - button "نمایش رمز عبور" [ref=e216]
+          - generic [ref=e220]:
+            - generic [ref=e221]:
+              - checkbox "مرا به خاطر بسپار" [checked] [ref=e222] [cursor=pointer]
+              - checkbox [checked]
+              - generic [ref=e223]: مرا به خاطر بسپار
+            - link "فراموشی رمز عبور؟" [ref=e224] [cursor=pointer]:
+              - /url: /forgot-password
+          - button "ورود" [ref=e225] [cursor=pointer]
+      - complementary [ref=e226]:
+        - generic [ref=e227]:
+          - generic [ref=e228]: پلتفرم حرفه‌ای قیمت طلا
+          - heading "شفافیت بازار طلا و سکه، در دستان شما." [level=2] [ref=e229]
+          - paragraph [ref=e230]: با ورود به حساب کاربری، به قیمت‌های لحظه‌ای و سابقه تراکنش‌ها دسترسی خواهید داشت.
+          - generic [ref=e231]:
+            - generic [ref=e232]: به‌روزرسانی سریع
+            - generic [ref=e233]: امنیت داده‌ها
+            - generic [ref=e234]: پشتیبانی فارسی
+            - generic [ref=e235]: طراحی واکنش‌گرا
+  - region "Notifications alt+T"

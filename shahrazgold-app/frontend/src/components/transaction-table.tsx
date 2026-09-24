@@ -29,7 +29,7 @@ export function TransactionTable({ items }: { items: Transaction[] }) {
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="text-start">کد پیگیری</TableHead>
+            {/* <TableHead className="text-start">کد پیگیری</TableHead> */}
             <TableHead className="text-start">نوع</TableHead>
             <TableHead className="text-start">دارایی</TableHead>
             <TableHead className="text-start">مقدار</TableHead>
@@ -44,7 +44,7 @@ export function TransactionTable({ items }: { items: Transaction[] }) {
             const tone = TYPE_TONE[t.type];
             return (
               <TableRow key={t.id}>
-                <TableCell className="font-mono text-sm">{t.trackingCode}</TableCell>
+                {/* <TableCell className="font-mono text-sm">{t.trackingCode}</TableCell> */}
                 <TableCell>
                   <span className={`font-bold ${tone.className}`}>{tone.label}</span>
                 </TableCell>
@@ -93,7 +93,7 @@ export function TransactionCard({ t }: { t: Transaction }) {
             <span className="text-xs text-muted-foreground">·</span>
             <span className="truncate text-sm font-bold">{t.assetTitle}</span>
           </div>
-          <div className="mt-1 font-mono text-xs text-muted-foreground">{t.trackingCode}</div>
+          {/* <div className="mt-1 font-mono text-xs text-muted-foreground">{t.trackingCode}</div> */}
         </div>
         <StatusBadge status={t.status} />
       </div>

@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "شهراز‌گلد ShahrazGold" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]:
+            - generic [ref=e8]: شهراز‌گلد
+            - generic [ref=e9]: ShahrazGold
+        - link "بازگشت به سایت" [ref=e10] [cursor=pointer]:
+          - /url: /
+    - generic [ref=e12]:
+      - heading "ورود به حساب کاربری" [level=1] [ref=e13]
+      - paragraph [ref=e14]: برای مشاهده قیمت‌ها و تراکنش‌ها وارد شوید.
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - text: شماره موبایل
+          - textbox "شماره موبایل" [ref=e18]:
+            - /placeholder: 09xxxxxxxxx
+        - generic [ref=e19]:
+          - text: رمز عبور
+          - generic [ref=e20]:
+            - textbox "رمز عبور" [ref=e21]
+            - button "نمایش رمز عبور" [ref=e22]
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - checkbox "مرا به خاطر بسپار" [checked] [ref=e28] [cursor=pointer]
+            - checkbox [checked]
+            - generic [ref=e29]: مرا به خاطر بسپار
+          - link "فراموشی رمز عبور؟" [ref=e30] [cursor=pointer]:
+            - /url: /forgot-password
+        - button "ورود" [ref=e31] [cursor=pointer]
+  - region "Notifications alt+T"

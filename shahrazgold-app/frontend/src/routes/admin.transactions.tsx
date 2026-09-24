@@ -244,7 +244,9 @@ function TransactionsPage() {
           {selected && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-right">جزئیات معامله {selected.code}</DialogTitle>
+                <DialogTitle className="text-right">
+                  جزئیات معامله {/* {selected.code} */}
+                </DialogTitle>
                 <DialogDescription className="text-right">
                   {formatPersianDate(selected.createdAt)} — {formatPersianTime(selected.createdAt)}
                 </DialogDescription>

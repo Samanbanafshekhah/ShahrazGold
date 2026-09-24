@@ -336,19 +336,23 @@ function PriceCardGrid({
 function PriceAssetInfo({ asset }: { asset: LivePriceAsset }) {
     return (
         <div className="flex min-w-0 items-center gap-3">
+            {/* نماد انگلیسی محصول عمداً در رابط کاربری نمایش داده نمی‌شود.
             <span
                 className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-soft text-xs font-extrabold text-[color:var(--gold-dark)]"
                 aria-hidden
             >
                 {asset.icon}
             </span>
+            */}
             <span className="min-w-0">
                 <span className="block truncate text-sm font-extrabold">{asset.name}</span>
+                {/* نماد برای منطق داخلی نگه داشته شده، اما نمایش آن غیرفعال است.
                 {asset.symbol && (
                     <span className="mt-0.5 block text-xs text-muted-foreground">
                         {asset.symbol}
                     </span>
                 )}
+                */}
             </span>
         </div>
     );

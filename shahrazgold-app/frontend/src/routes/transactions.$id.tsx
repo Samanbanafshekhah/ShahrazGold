@@ -58,7 +58,7 @@ function TransactionDetailPage() {
             <section className="mt-4 rounded-3xl border border-border bg-card p-6 shadow-elegant sm:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p className="text-xs text-muted-foreground font-mono">{t.trackingCode}</p>
+                        {/* <p className="text-xs text-muted-foreground font-mono">{t.trackingCode}</p> */}
                         <h1 className="mt-1 text-2xl font-extrabold">
                             {TRANSACTION_TYPE_LABELS[t.type]} {t.assetTitle}
                         </h1>
@@ -73,7 +73,7 @@ function TransactionDetailPage() {
                     <Row label="قیمت واحد" value={formatRial(t.unitPrice)} />
                     <Row label="مبلغ کل (ریال)" value={formatRial(t.total)} />
                     <Row label="مبلغ کل (تومان)" value={formatToman(t.total)} />
-                    <Row label="نماد" value={t.assetSymbol} />
+                    {/* <Row label="نماد" value={t.assetSymbol} /> */}
                     <Row
                         label="آخرین به‌روزرسانی"
                         value={`${formatPersianDate(t.updatedAt)} · ${formatPersianTime(t.updatedAt)}`}

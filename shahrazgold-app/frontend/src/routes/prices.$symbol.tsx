@@ -76,8 +76,10 @@ function PriceDetailPage() {
                                       ? "آبشده"
                                       : "سکه"}
                             </span>
+                            {/* نماد انگلیسی محصول در رابط کاربری نمایش داده نمی‌شود.
                             <span>·</span>
                             <span>{asset.symbol}</span>
+                            */}
                         </div>
                         <h1 className="mt-1 text-xl font-extrabold leading-8 sm:text-3xl">
                             {asset.title}

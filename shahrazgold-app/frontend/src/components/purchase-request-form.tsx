@@ -214,7 +214,7 @@ export function PurchaseRequestForm({
                         placeholder="مثلاً ۵٬۰۰۰٬۰۰۰"
                         aria-invalid={Boolean(validationError)}
                         aria-describedby={`${amountId}-help`}
-                        className="h-11 rounded-xl bg-card text-sm tabular-nums"
+                        className="h-11 rounded-xl bg-card tabular-nums"
                     />
                     <p id={`${amountId}-help`} className="text-[11px] text-muted-foreground">
                         {isCountUnit ? "تعداد تقریبی:" : "وزن تقریبی:"}{" "}
@@ -252,7 +252,7 @@ export function PurchaseRequestForm({
                         }
                         aria-invalid={Boolean(validationError)}
                         aria-describedby={`${quantityId}-help`}
-                        className="h-11 rounded-xl bg-card text-sm tabular-nums"
+                        className="h-11 rounded-xl bg-card tabular-nums"
                     />
                     <p id={`${quantityId}-help`} className="text-[11px] text-muted-foreground">
                         مبلغ تقریبی:{" "}

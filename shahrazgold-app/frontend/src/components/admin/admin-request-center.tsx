@@ -68,7 +68,8 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
         setBusyId(request.id);
         try {
             await approveRequest(request.id);
-            toast.success("درخواست " + request.code + " تأیید شد.");
+            // toast.success("درخواست " + request.code + " تأیید شد.");
+            toast.success("درخواست تأیید شد.");
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "تأیید درخواست ناموفق بود.");
         } finally {
@@ -97,7 +98,8 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
         setBusyId(rejectTarget.id);
         try {
             await rejectRequest(rejectTarget.id, reason);
-            toast.success("درخواست " + rejectTarget.code + " رد شد.");
+            // toast.success("درخواست " + rejectTarget.code + " رد شد.");
+            toast.success("درخواست رد شد.");
             closeRejectDialog();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "رد درخواست ناموفق بود.");
@@ -217,7 +219,8 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
                             رد درخواست {rejectTarget?.tradeType === "sell" ? "فروش" : "خرید"}
                         </DialogTitle>
                         <DialogDescription className="text-right">
-                            علت رد درخواست {rejectTarget?.code} در سوابق ثبت می‌شود.
+                            {/* علت رد درخواست {rejectTarget?.code} در سوابق ثبت می‌شود. */}
+                            علت رد درخواست در سوابق ثبت می‌شود.
                         </DialogDescription>
                     </DialogHeader>
                     <Textarea
@@ -282,9 +285,9 @@ function RequestCard({
                     >
                         درخواست {request.tradeType === "sell" ? "فروش" : "خرید"}
                     </div>
-                    <div className="mt-1 font-mono text-[11px] text-muted-foreground" dir="ltr">
+                    {/* <div className="mt-1 font-mono text-[11px] text-muted-foreground" dir="ltr">
                         {request.code}
-                    </div>
+                    </div> */}
                 </div>
                 <RequestStatusBadge status={request.status} />
             </div>

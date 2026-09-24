@@ -49,7 +49,7 @@ export function PriceTable({ assets }: { assets: GoldAsset[] }) {
                   <span>
                     <span className="block text-sm font-bold">{a.title}</span>
                     <span className="block text-[11px] text-muted-foreground">
-                      {a.symbol} · هر {a.unit}
+                      {/* {a.symbol} · */} هر {a.unit}
                     </span>
                   </span>
                 </Link>

@@ -1,0 +1,162 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "شهراز‌گلد ShahrazGold" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]:
+            - generic [ref=e8]: شهراز‌گلد
+            - generic [ref=e9]: ShahrazGold
+        - navigation [ref=e10]:
+          - link "خانه" [ref=e11] [cursor=pointer]:
+            - /url: /
+          - link "خدمات" [ref=e12] [cursor=pointer]:
+            - /url: "#features"
+          - link "قیمت‌ها" [ref=e13] [cursor=pointer]:
+            - /url: "#prices"
+          - link "تماس با ما" [ref=e14] [cursor=pointer]:
+            - /url: "#contact"
+        - link "ورود" [ref=e16] [cursor=pointer]:
+          - /url: /login
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: مرجع شفاف قیمت طلا و سکه
+        - heading "قیمت‌های طلا و سکه، دقیق، شفاف و در دسترس شما" [level=1] [ref=e24]
+        - paragraph [ref=e25]: شهراز‌گلد بستری حرفه‌ای برای مشاهده لحظه‌ای قیمت‌های بازار، پیگیری تاریخچه معاملات و مدیریت حساب کاربری در یک محیط امن و ساده است.
+        - link "مشاهده قیمت‌ها" [ref=e27] [cursor=pointer]:
+          - /url: "#prices"
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33]: نمای کلی بازار
+          - generic [ref=e34]: قیمت‌های منتخب
+        - generic [ref=e35]: بازار باز
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - heading "چرا شهراز‌گلد؟" [level=2] [ref=e40]
+        - paragraph [ref=e41]: تجربه‌ای حرفه‌ای برای دنبال کردن بازار طلا و سکه
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - heading "قیمت‌های به‌روز" [level=3] [ref=e48]
+          - paragraph [ref=e49]: دریافت لحظه‌ای قیمت طلا، سکه و اونس جهانی.
+        - generic [ref=e50]:
+          - heading "حساب کاربری امن" [level=3] [ref=e55]
+          - paragraph [ref=e56]: ورود امن و مدیریت نشست با Laravel Sanctum.
+        - generic [ref=e57]:
+          - heading "سابقه معاملات" [level=3] [ref=e63]
+          - paragraph [ref=e64]: دسترسی سریع به تمامی تراکنش‌های شما.
+        - generic [ref=e65]:
+          - heading "تجربه واکنش‌گرا" [level=3] [ref=e69]
+          - paragraph [ref=e70]: طراحی روان روی موبایل، تبلت و دسکتاپ.
+    - generic [ref=e73]:
+      - status [ref=e74]:
+        - generic [ref=e75]: مدیر آنلاین است
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - heading "قیمت لحظه ای بازار ارز" [level=2] [ref=e80]
+            - paragraph [ref=e81]: دسته دارایی مورد نظر را انتخاب کنید.
+          - generic [ref=e82]: ۲ دارایی
+        - generic "فیلتر دسته‌بندی قیمت‌ها" [ref=e83]:
+          - button "همه" [pressed] [ref=e84]
+          - button "طلا" [ref=e85]
+          - button "سکه" [ref=e86]
+          - button "طلای آب‌شده" [ref=e87]
+          - button "ارز" [ref=e88]
+          - button "نقره" [ref=e89]
+      - table [ref=e93]:
+        - rowgroup [ref=e94]:
+          - row [ref=e95]:
+            - columnheader "نام دارایی" [ref=e96]
+            - columnheader "قیمت لحظه‌ای" [ref=e97]
+            - columnheader "تغییر روزانه" [ref=e98]
+            - columnheader "قیمت خرید" [ref=e99]
+            - columnheader "عملیات" [ref=e100]
+        - rowgroup [ref=e101]:
+          - row [ref=e102]:
+            - cell "۱۸ عیار PRODUCT_1786911598226" [ref=e103]:
+              - generic [ref=e104]:
+                - generic [ref=e105]: PR
+                - generic [ref=e106]:
+                  - generic [ref=e107]: ۱۸ عیار
+                  - generic [ref=e108]: PRODUCT_1786911598226
+            - cell "۲۳,۲۰۵,۰۰۰ تومان" [ref=e109]
+            - cell "۰.۰۰٪" [ref=e110]
+            - cell "۲۳,۲۰۵,۰۰۰ تومان" [ref=e112]
+            - cell [ref=e113]:
+              - link "برای خرید ابتدا وارد شوید" [ref=e114] [cursor=pointer]:
+                - /url: /login
+          - row [ref=e115]:
+            - cell "سکه PRODUCT_1786914283368" [ref=e116]:
+              - generic [ref=e117]:
+                - generic [ref=e118]: PR
+                - generic [ref=e119]:
+                  - generic [ref=e120]: سکه
+                  - generic [ref=e121]: PRODUCT_1786914283368
+            - cell "۱۰۳,۲۷۰,۰۰۰ تومان" [ref=e122]
+            - cell "۰.۰۰٪" [ref=e123]
+            - cell "۱۰۳,۲۷۰,۰۰۰ تومان" [ref=e125]
+            - cell [ref=e126]:
+              - link "برای خرید ابتدا وارد شوید" [ref=e127] [cursor=pointer]:
+                - /url: /login
+    - contentinfo [ref=e128]:
+      - generic [ref=e129]:
+        - generic [ref=e130]:
+          - link "شهراز‌گلد ShahrazGold" [ref=e131] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e133]:
+              - generic [ref=e134]: شهراز‌گلد
+              - generic [ref=e135]: ShahrazGold
+          - paragraph [ref=e136]: شهراز‌گلد پلتفرمی حرفه‌ای برای مشاهده شفاف قیمت طلا و سکه و مدیریت آسان حساب کاربری، طراحی‌شده برای فعالان بازار طلا.
+          - generic [ref=e137]:
+            - link "شبکه اجتماعی" [ref=e138] [cursor=pointer]:
+              - /url: "#"
+            - link "شبکه اجتماعی" [ref=e142] [cursor=pointer]:
+              - /url: "#"
+            - link "شبکه اجتماعی" [ref=e145] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=e149]:
+          - heading "دسترسی سریع" [level=4] [ref=e150]
+          - list [ref=e151]:
+            - listitem [ref=e152]:
+              - link "صفحه اصلی" [ref=e153] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e154]:
+              - link "خدمات ما" [ref=e155] [cursor=pointer]:
+                - /url: "#features"
+            - listitem [ref=e156]:
+              - link "قیمت‌ها" [ref=e157] [cursor=pointer]:
+                - /url: "#prices"
+            - listitem [ref=e158]:
+              - link "ورود به حساب" [ref=e159] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e160]:
+              - link "ورود مدیر" [ref=e161] [cursor=pointer]:
+                - /url: /admin-login
+        - generic [ref=e162]:
+          - heading "راهنما" [level=4] [ref=e163]
+          - list [ref=e164]:
+            - listitem [ref=e165]:
+              - link "قوانین و مقررات" [ref=e166] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e167]:
+              - link "حریم خصوصی" [ref=e168] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e169]:
+              - link "پرسش‌های متداول" [ref=e170] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e171]:
+              - link "پشتیبانی" [ref=e172] [cursor=pointer]:
+                - /url: "#"
+        - generic [ref=e173]:
+          - heading "در تماس باشید" [level=4] [ref=e174]
+          - list [ref=e175]:
+            - listitem [ref=e176]:
+              - generic [ref=e179]: ۰۲۱-۹۱۰۰۹۱۰۰
+            - listitem [ref=e180]:
+              - generic [ref=e184]: support@shahraygold.ir
+            - listitem [ref=e185]:
+              - generic [ref=e189]: تهران، خیابان ولیعصر، برج طلایی، طبقه ۹
+      - generic [ref=e191]:
+        - generic [ref=e192]: © ۲۰۲۶ شهراز‌گلد. تمامی حقوق محفوظ است.
+        - generic [ref=e193]: ساخته‌شده با دقت برای بازار طلای ایران
+  - region "Notifications alt+T"

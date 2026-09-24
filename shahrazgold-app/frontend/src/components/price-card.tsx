@@ -28,7 +28,7 @@ export function PriceCard({ asset }: { asset: GoldAsset }) {
             <div className="min-w-0">
               <h3 className="truncate text-sm font-bold">{asset.title}</h3>
               <p className="text-[11px] text-muted-foreground">
-                {asset.symbol} · هر {asset.unit}
+                {/* {asset.symbol} · */} هر {asset.unit}
               </p>
             </div>
           </div>

@@ -1,0 +1,35 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - banner [ref=f1e3]:
+      - generic [ref=f1e4]:
+        - link "شهراز‌گلد ShahrazGold" [ref=f1e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f1e7]:
+            - generic [ref=f1e8]: شهراز‌گلد
+            - generic [ref=f1e9]: ShahrazGold
+        - link "بازگشت به سایت" [ref=f1e10] [cursor=pointer]:
+          - /url: /
+    - generic [ref=f1e12]:
+      - heading "ورود به حساب کاربری" [level=1] [ref=f1e13]
+      - paragraph [ref=f1e14]: برای مشاهده قیمت‌ها و تراکنش‌ها وارد شوید.
+      - generic [ref=f1e16]:
+        - generic [ref=f1e17]:
+          - text: شماره موبایل
+          - textbox "شماره موبایل" [invalid] [ref=f1e18]:
+            - /placeholder: 09xxxxxxxxx
+          - paragraph [ref=f1e32]: شماره موبایل باید در قالب 09xxxxxxxxx باشد.
+        - generic [ref=f1e19]:
+          - text: رمز عبور
+          - generic [ref=f1e20]:
+            - textbox "رمز عبور" [invalid] [ref=f1e21]
+            - button "نمایش رمز عبور" [ref=f1e22]
+          - paragraph [ref=f1e33]: رمز عبور باید حداقل ۸ کاراکتر باشد.
+        - generic [ref=f1e26]:
+          - generic [ref=f1e27]:
+            - checkbox "مرا به خاطر بسپار" [checked] [ref=f1e28] [cursor=pointer]
+            - checkbox [checked]
+            - generic [ref=f1e29]: مرا به خاطر بسپار
+          - link "فراموشی رمز عبور؟" [ref=f1e30] [cursor=pointer]:
+            - /url: /forgot-password
+        - button "ورود" [active] [ref=f1e31] [cursor=pointer]
+  - region "Notifications alt+T"
