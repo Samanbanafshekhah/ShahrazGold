@@ -29,7 +29,7 @@ export function PriceChange({
       <Icon className="h-3.5 w-3.5" aria-hidden />
       <span>{formatPercent(changePercent)}</span>
       {!compact && (
-        <span className="text-[10px] font-medium opacity-80">
+        <span className="text-[11px] font-medium opacity-80">
           ({formatSignedNumber(change)} {currency === "USD" ? "$" : ""})
         </span>
       )}

@@ -156,7 +156,7 @@ function DashboardPage() {
         <AppShell onRefresh={onRefresh} refreshing={refreshing} pageTitle="قیمت لحظه‌ای طلا و سکه">
             <div className="mx-auto max-w-6xl">
                 <header className="mb-4 sm:mb-6">
-                    <p className="text-[11px] text-muted-foreground sm:text-xs">
+                    <p className="text-[12px] text-muted-foreground sm:text-xs">
                         {user
                             ? `${user.firstName} عزیز، به بازار شهراز‌گلد خوش آمدید`
                             : "بازار شهراز‌گلد"}

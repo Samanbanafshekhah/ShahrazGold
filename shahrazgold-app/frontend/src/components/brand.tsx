@@ -23,7 +23,7 @@ export function Brand({ to = "/" as string }: { to?: string }) {
       <BrandMark />
       <span className="flex flex-col leading-tight">
         <span className="text-base font-extrabold">شهراز‌گلد</span>
-        <span className="text-[10px] text-muted-foreground">ShahrazGold</span>
+        <span className="text-[11px] text-muted-foreground">ShahrazGold</span>
       </span>
     </Link>
   );

@@ -66,7 +66,7 @@ export function PurchaseRequestModal({
             <DialogTitle className="text-base font-extrabold sm:text-lg">
               ثبت درخواست {actionLabel}
             </DialogTitle>
-            <DialogDescription className="text-[11px] leading-5 sm:text-xs">
+            <DialogDescription className="text-[12px] leading-5 sm:text-xs">
               محصول انتخاب‌شده و قیمت فعلی را بررسی کنید، سپس مقدار {actionLabel} را وارد کنید.
             </DialogDescription>
           </DialogHeader>
@@ -110,12 +110,12 @@ function SelectedProductSummary({
     <section className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border bg-muted/35 p-3">
       <div className="min-w-0">
         <h2 className="truncate text-sm font-extrabold">{product.title}</h2>
-        <p className="mt-0.5 text-[10px] text-muted-foreground">
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
           هر {product.unit} · به‌روزرسانی {formatRelativeMinutes(product.updatedAt)}
         </p>
         {product.changePercent !== undefined && (
           <span
-            className={`mt-1 inline-flex items-center gap-1 text-[10px] font-bold ${trendTone}`}
+            className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${trendTone}`}
           >
             <Icon className="h-3 w-3" aria-hidden />
             تغییر قیمت {formatPercent(product.changePercent)}
@@ -123,7 +123,7 @@ function SelectedProductSummary({
         )}
       </div>
       <div className="text-end">
-        <span className="block text-[9px] text-muted-foreground">
+        <span className="block text-[10px] text-muted-foreground">
           قیمت فعلی {action === "buy" ? "خرید" : "فروش"}
         </span>
         <strong

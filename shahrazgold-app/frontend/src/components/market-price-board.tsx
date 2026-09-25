@@ -43,14 +43,14 @@ export function PriceUpdateStatus({
             role="status"
             aria-live="polite"
         >
-            <p className="text-[11px] text-muted-foreground sm:text-xs">
+            <p className="text-[12px] text-muted-foreground sm:text-xs">
                 آخرین به‌روزرسانی قیمت: {updatedAt ? formatRelativeMinutes(updatedAt) : "—"}
             </p>
             <div className="flex flex-wrap items-center gap-3">
                 {managerOnline !== undefined && (
                     <span
                         className={
-                            "inline-flex items-center gap-1.5 text-[11px] font-bold sm:text-xs " +
+                            "inline-flex items-center gap-1.5 text-[12px] font-bold sm:text-xs " +
                             (managerOnline ? "text-positive" : "text-negative")
                         }
                     >
@@ -207,24 +207,24 @@ function PriceSection({
                     >
                         {title}
                     </h2>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
+                    <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-xs">
                         {description}
                     </p>
                 </div>
-                <span className="text-center text-[10px] font-bold text-muted-foreground md:hidden">
+                <span className="text-center text-[11px] font-bold text-muted-foreground md:hidden">
                     خرید
                 </span>
-                <span className="text-center text-[10px] font-bold text-muted-foreground md:hidden">
+                <span className="text-center text-[11px] font-bold text-muted-foreground md:hidden">
                     فروش
                 </span>
                 {prominent && (
-                    <span className="hidden items-center gap-1 rounded-full bg-gold-soft px-2.5 py-1 text-[10px] font-bold text-[color:var(--gold-dark)] sm:text-[11px] md:inline-flex">
+                    <span className="hidden items-center gap-1 rounded-full bg-gold-soft px-2.5 py-1 text-[11px] font-bold text-[color:var(--gold-dark)] sm:text-[12px] md:inline-flex">
                         <Radio className="h-3 w-3" /> بازار آبشده
                     </span>
                 )}
             </header>
 
-            <div className="hidden grid-cols-[minmax(170px,1.4fr)_minmax(150px,1fr)_minmax(150px,1fr)_110px] gap-3 border-b border-border px-5 py-2.5 text-[11px] text-muted-foreground md:grid">
+            <div className="hidden grid-cols-[minmax(170px,1.4fr)_minmax(150px,1fr)_minmax(150px,1fr)_110px] gap-3 border-b border-border px-5 py-2.5 text-[12px] text-muted-foreground md:grid">
                 <span>محصول</span>
                 <span>خرید</span>
                 <span>فروش</span>
@@ -328,10 +328,10 @@ function PriceRow({
                 <div className="flex min-w-0 items-center gap-1 sm:gap-2">
                     {dragHandle}
                     <div className="group min-w-0">
-                        <h3 className="truncate text-[12.5px] font-bold transition-colors group-hover:text-[color:var(--gold-dark)] sm:text-sm">
+                        <h3 className="truncate text-[13.5px] font-bold transition-colors group-hover:text-[color:var(--gold-dark)] sm:text-sm">
                             {asset.title}
                         </h3>
-                        <p className="mt-0.5 text-[9.5px] text-muted-foreground sm:text-[10px]">
+                        <p className="mt-0.5 text-[10.5px] text-muted-foreground sm:text-[11px]">
                             هر {asset.unit}
                         </p>
                     </div>
@@ -412,7 +412,7 @@ function PriceCell({
             <span className="sr-only">{label}</span>
             <strong
                 className={
-                    "block whitespace-nowrap text-[15px] font-black leading-none tracking-tight tabular-nums sm:text-[16px] lg:text-[18px] " +
+                    "block whitespace-nowrap text-[16px] font-black leading-none tracking-tight tabular-nums sm:text-[17px] lg:text-[19px] " +
                     (value === undefined || tradeDisabled
                         ? "text-muted-foreground"
                         : tone === "buy"

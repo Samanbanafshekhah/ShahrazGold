@@ -131,7 +131,7 @@ function ManagerStatusBar({ online }: { online: boolean | null }) {
                 {isOnline ? "مدیر آنلاین است" : "مدیر آفلاین است"}
             </span>
             {!isOnline && (
-                <span className="text-[11px] font-medium">
+                <span className="text-[12px] font-medium">
                     ثبت درخواست خرید موقتاً غیرفعال است.
                 </span>
             )}

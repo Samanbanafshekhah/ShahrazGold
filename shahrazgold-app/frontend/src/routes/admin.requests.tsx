@@ -314,7 +314,7 @@ function RequestsPage() {
                                             درخواست {r.tradeType === "sell" ? "فروش" : "خرید"}
                                         </div>
                                         {/* <div
-                                            className="mt-1 font-mono text-[11px] text-muted-foreground"
+                                            className="mt-1 font-mono text-[12px] text-muted-foreground"
                                             dir="ltr"
                                         >
                                             {r.code}
@@ -325,7 +325,7 @@ function RequestsPage() {
 
                                 <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/35 p-3 text-xs">
                                     <div className="min-w-0">
-                                        <div className="text-[10px] text-muted-foreground">
+                                        <div className="text-[11px] text-muted-foreground">
                                             محصول
                                         </div>
                                         <div className="mt-1 truncate font-bold">
@@ -333,7 +333,7 @@ function RequestsPage() {
                                         </div>
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="text-[10px] text-muted-foreground">
+                                        <div className="text-[11px] text-muted-foreground">
                                             مقدار
                                         </div>
                                         <div className="mt-1 font-bold">
@@ -341,7 +341,7 @@ function RequestsPage() {
                                         </div>
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="text-[10px] text-muted-foreground">
+                                        <div className="text-[11px] text-muted-foreground">
                                             مبلغ کل
                                         </div>
                                         <div className="mt-1 truncate font-bold tabular-nums">
@@ -349,7 +349,7 @@ function RequestsPage() {
                                         </div>
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="text-[10px] text-muted-foreground">
+                                        <div className="text-[11px] text-muted-foreground">
                                             قیمت ثبت
                                         </div>
                                         <div className="mt-1 truncate tabular-nums">
@@ -359,7 +359,7 @@ function RequestsPage() {
                                 </div>
 
                                 <div className="flex min-w-0 items-center justify-between gap-3">
-                                    <div className="min-w-0 text-[11px] leading-5 text-muted-foreground">
+                                    <div className="min-w-0 text-[12px] leading-5 text-muted-foreground">
                                         <div dir="ltr" className="text-right">
                                             {toPersianDigits(r.mobile)}
                                         </div>
@@ -493,7 +493,7 @@ function RequestsPage() {
                                                 />
                                                 <div className="flex-1">
                                                     <div className="text-foreground">{t.label}</div>
-                                                    <div className="text-[11px] text-muted-foreground">
+                                                    <div className="text-[12px] text-muted-foreground">
                                                         {formatPersianDate(t.at)} —{" "}
                                                         {formatPersianTime(t.at)}
                                                     </div>

@@ -298,13 +298,13 @@ function CategoriesPage() {
                                             <h2 className="truncate text-sm font-bold">
                                                 {category.name}
                                             </h2>
-                                            <p className="mt-1 text-[11px] text-muted-foreground">
+                                            <p className="mt-1 text-[12px] text-muted-foreground">
                                                 ایجاد: {formatPersianDate(category.createdAt)}
                                             </p>
                                         </div>
                                         <span
                                             className={
-                                                "shrink-0 rounded-full px-2 py-1 text-[10px] font-bold " +
+                                                "shrink-0 rounded-full px-2 py-1 text-[11px] font-bold " +
                                                 (category.active
                                                     ? "bg-positive-soft text-positive"
                                                     : "bg-muted text-muted-foreground")
@@ -417,7 +417,7 @@ function CategoriesPage() {
                                     className="mt-1.5 min-h-24 resize-y"
                                     maxLength={500}
                                 />
-                                <p className="mt-1 text-left text-[10px] text-muted-foreground">
+                                <p className="mt-1 text-left text-[11px] text-muted-foreground">
                                     {toPersianDigits(form.description.length)} / ۵۰۰
                                 </p>
                             </div>
@@ -425,7 +425,7 @@ function CategoriesPage() {
                             <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border p-3">
                                 <div>
                                     <div className="text-sm font-bold">دسته‌بندی فعال باشد</div>
-                                    <div className="mt-1 text-[11px] text-muted-foreground">
+                                    <div className="mt-1 text-[12px] text-muted-foreground">
                                         دسته‌بندی‌های غیرفعال برای مشتریان نمایش داده نمی‌شوند.
                                     </div>
                                 </div>
@@ -499,7 +499,7 @@ function CategoryStat({
         <div className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-elegant sm:p-4">
             <Icon className={`h-4 w-4 ${className}`} />
             <div className="mt-3 text-lg font-extrabold sm:text-2xl">{toPersianDigits(value)}</div>
-            <div className="mt-1 truncate text-[10px] text-muted-foreground sm:text-xs">
+            <div className="mt-1 truncate text-[11px] text-muted-foreground sm:text-xs">
                 {label}
             </div>
         </div>

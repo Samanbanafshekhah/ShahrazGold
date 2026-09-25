@@ -26,10 +26,10 @@ function SettingsPage() {
           <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border p-3">
             <div className="min-w-0">
               <div className="text-sm font-bold">حالت شب</div>
-              <div className="text-[11px] text-muted-foreground">تغییر تم پنل ادمین</div>
+              <div className="text-[12px] text-muted-foreground">تغییر تم پنل ادمین</div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <span className="text-[10px] font-bold text-muted-foreground">
+              <span className="text-[11px] font-bold text-muted-foreground">
                 {theme === "dark" ? "روشن" : "خاموش"}
               </span>
               <Switch
@@ -100,11 +100,11 @@ function ToggleRow({
     <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border p-3">
       <div className="min-w-0">
         <div className="text-sm font-bold leading-6">{label}</div>
-        {hint && <div className="text-[11px] leading-5 text-muted-foreground">{hint}</div>}
+        {hint && <div className="text-[12px] leading-5 text-muted-foreground">{hint}</div>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <span
-          className={"text-[10px] font-bold " + (value ? "text-positive" : "text-muted-foreground")}
+          className={"text-[11px] font-bold " + (value ? "text-positive" : "text-muted-foreground")}
         >
           {value ? "روشن" : "خاموش"}
         </span>

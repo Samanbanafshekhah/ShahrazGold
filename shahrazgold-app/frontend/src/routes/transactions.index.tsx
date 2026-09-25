@@ -83,7 +83,7 @@ function TransactionsPage() {
                         <div className="min-w-0">
                             <label
                                 htmlFor="transactions-from-date"
-                                className="mb-1 block text-[10px] font-bold text-muted-foreground sm:text-[11px]"
+                                className="mb-1 block text-[11px] font-bold text-muted-foreground sm:text-[12px]"
                             >
                                 از تاریخ
                             </label>
@@ -92,13 +92,13 @@ function TransactionsPage() {
                                 value={fromDate}
                                 max={toDate || undefined}
                                 onChange={setFromDate}
-                                className="text-[11px] sm:text-xs"
+                                className="text-[12px] sm:text-xs"
                             />
                         </div>
                         <div className="min-w-0">
                             <label
                                 htmlFor="transactions-to-date"
-                                className="mb-1 block text-[10px] font-bold text-muted-foreground sm:text-[11px]"
+                                className="mb-1 block text-[11px] font-bold text-muted-foreground sm:text-[12px]"
                             >
                                 تا تاریخ
                             </label>
@@ -107,7 +107,7 @@ function TransactionsPage() {
                                 value={toDate}
                                 min={fromDate || undefined}
                                 onChange={setToDate}
-                                className="text-[11px] sm:text-xs"
+                                className="text-[12px] sm:text-xs"
                             />
                         </div>
                     </div>

@@ -61,7 +61,7 @@ function PriceDetailPage() {
         <AppShell onRefresh={onRefresh} refreshing={refreshing}>
             <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground sm:text-xs"
+                className="inline-flex items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground sm:text-xs"
             >
                 <ArrowRight className="h-3.5 w-3.5" /> بازگشت به داشبورد
             </Link>
@@ -84,7 +84,7 @@ function PriceDetailPage() {
                         <h1 className="mt-1 text-xl font-extrabold leading-8 sm:text-3xl">
                             {asset.title}
                         </h1>
-                        <p className="mt-0.5 text-[10px] text-muted-foreground sm:mt-1 sm:text-xs">
+                        <p className="mt-0.5 text-[11px] text-muted-foreground sm:mt-1 sm:text-xs">
                             آخرین به‌روزرسانی: {formatRelativeMinutes(asset.updatedAt)}
                         </p>
                     </div>
@@ -112,7 +112,7 @@ function PriceDetailPage() {
                 {asset.buy && (
                     <div className="mt-4 sm:mt-6">
                         <div className="border-y border-border bg-background py-3 sm:rounded-2xl sm:border sm:p-4">
-                            <div className="text-[11px] text-muted-foreground sm:text-xs">
+                            <div className="text-[12px] text-muted-foreground sm:text-xs">
                                 قیمت خرید
                             </div>
                             <div className="mt-1 text-lg font-extrabold tabular-nums text-positive sm:text-xl">
@@ -138,7 +138,7 @@ function PriceDetailPage() {
                             <h2 className="text-sm font-extrabold leading-6 sm:text-base">
                                 ثبت درخواست خرید {asset.title}
                             </h2>
-                            <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground sm:text-xs">
+                            <p className="mt-0.5 text-[12px] leading-5 text-muted-foreground sm:text-xs">
                                 محصول و قیمت خرید انتخاب شده‌اند؛ روش محاسبه را مشخص کنید.
                             </p>
                         </div>
@@ -157,7 +157,7 @@ function PriceDetailPage() {
 function Metric({ label, value }: { label: string; value: string }) {
     return (
         <div className="min-w-0 border-b border-border p-2.5 odd:border-e last:border-b-0 sm:rounded-2xl sm:border sm:bg-background sm:p-3 sm:odd:border-e">
-            <div className="text-[10px] text-muted-foreground sm:text-[11px]">{label}</div>
+            <div className="text-[11px] text-muted-foreground sm:text-[12px]">{label}</div>
             <div className="mt-1 truncate text-xs font-bold tabular-nums sm:text-sm">{value}</div>
         </div>
     );

@@ -88,7 +88,7 @@ function AnnouncementPage() {
                             onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
                             placeholder="متن اطلاعیه بازار..."
                         />
-                        <div className="flex justify-end text-[11px] text-muted-foreground">
+                        <div className="flex justify-end text-[12px] text-muted-foreground">
                             {toPersianDigits(draft.text.length)} / {toPersianDigits(MAX)}
                         </div>
                     </div>
@@ -118,7 +118,7 @@ function AnnouncementPage() {
                         <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border p-3">
                             <div className="min-w-0">
                                 <div className="text-sm font-bold">وضعیت نمایش</div>
-                                <div className="mt-1 text-[11px] leading-5 text-muted-foreground">
+                                <div className="mt-1 text-[12px] leading-5 text-muted-foreground">
                                     در صورت غیرفعال بودن، برای مشتریان نمایش داده نمی‌شود.
                                 </div>
                             </div>
@@ -165,7 +165,7 @@ function AnnouncementPage() {
                 <section className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-elegant sm:p-5">
                     <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <h2 className="text-sm font-bold">پیش‌نمایش زنده</h2>
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-[12px] text-muted-foreground">
                             همان‌طور که در سایت مشتریان دیده می‌شود
                         </span>
                     </div>

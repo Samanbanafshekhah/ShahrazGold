@@ -611,7 +611,7 @@ function PricesPage() {
                                     className="mt-1.5 h-11 text-left"
                                     aria-invalid={Boolean(productErrors.sellPriceDifferenceToman)}
                                 />
-                                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                <p className="mt-1.5 text-[12px] text-muted-foreground">
                                     این مبلغ از قیمت خرید کم می‌شود تا قیمت فروش به مشتری محاسبه
                                     شود.
                                 </p>
@@ -663,7 +663,7 @@ function PricesPage() {
                         <div className="space-y-4 py-2">
                             <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-3">
                                 <div>
-                                    <span className="text-[11px] text-muted-foreground">
+                                    <span className="text-[12px] text-muted-foreground">
                                         گام فعلی
                                     </span>
                                     <strong className="mt-1 block text-base font-extrabold tabular-nums">
@@ -671,7 +671,7 @@ function PricesPage() {
                                     </strong>
                                 </div>
                                 <div>
-                                    <span className="text-[11px] text-muted-foreground">
+                                    <span className="text-[12px] text-muted-foreground">
                                         گام جدید
                                     </span>
                                     <strong className="mt-1 block text-base font-extrabold tabular-nums text-[color:var(--gold-dark)]">
@@ -698,7 +698,7 @@ function PricesPage() {
                                     className="mt-1.5 h-11 text-center text-base font-bold tabular-nums"
                                     autoFocus
                                 />
-                                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                <p className="mt-1.5 text-[12px] text-muted-foreground">
                                     هر گام پایه {formatNumber(BASE_PRICE_STEP)} تومان است؛ برای مثال
                                     عدد ۵۰، تغییر قیمت را روی ۵۰٬۰۰۰ تومان تنظیم می‌کند.
                                 </p>
@@ -835,23 +835,23 @@ function AdminPriceSection({
                     )}
                     <div className="min-w-0">
                         <h2 className="text-sm font-extrabold sm:text-base">{title}</h2>
-                        <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
+                        <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-xs">
                             {description}
                         </p>
                     </div>
                 </div>
-                <span className="text-center text-[10px] font-bold text-muted-foreground xl:hidden">
+                <span className="text-center text-[11px] font-bold text-muted-foreground xl:hidden">
                     خرید
                 </span>
-                <span className="text-center text-[10px] font-bold text-muted-foreground xl:hidden">
+                <span className="text-center text-[11px] font-bold text-muted-foreground xl:hidden">
                     فروش
                 </span>
-                <span className="hidden shrink-0 rounded-full bg-gold-soft px-2.5 py-1 text-[10px] font-bold text-[color:var(--gold-dark)] sm:text-[11px] xl:inline-flex">
+                <span className="hidden shrink-0 rounded-full bg-gold-soft px-2.5 py-1 text-[11px] font-bold text-[color:var(--gold-dark)] sm:text-[12px] xl:inline-flex">
                     {toPersianDigits(items.length)} محصول
                 </span>
             </header>
 
-            <div className="admin-price-header-grid hidden grid-cols-[minmax(170px,1.4fr)_minmax(150px,1fr)_minmax(150px,1fr)_90px_120px] gap-3 border-b border-border px-5 py-2.5 text-[11px] text-muted-foreground xl:grid">
+            <div className="admin-price-header-grid hidden grid-cols-[minmax(170px,1.4fr)_minmax(150px,1fr)_minmax(150px,1fr)_90px_120px] gap-3 border-b border-border px-5 py-2.5 text-[12px] text-muted-foreground xl:grid">
                 <span>محصول</span>
                 <span>خرید</span>
                 <span>فروش</span>
@@ -955,10 +955,10 @@ function AdminPriceRow({
                         <GripVertical className="h-4 w-4" aria-hidden />
                     </button>
                     <div className="group min-w-0">
-                        <h3 className="truncate text-[12.5px] font-bold transition-colors group-hover:text-[color:var(--gold-dark)] sm:text-sm">
+                        <h3 className="truncate text-[13.5px] font-bold transition-colors group-hover:text-[color:var(--gold-dark)] sm:text-sm">
                             {item.title}
                         </h3>
-                        <p className="mt-0.5 text-[9.5px] text-muted-foreground sm:text-[10px]">
+                        <p className="mt-0.5 text-[10.5px] text-muted-foreground sm:text-[11px]">
                             هر {item.unit} · گام {formatNumber(item.priceStep)}
                         </p>
                     </div>
@@ -1008,7 +1008,7 @@ function AdminPriceRow({
                         variant="outline"
                         size="sm"
                         onClick={() => onEdit(item)}
-                        className="h-8 w-full min-w-0 px-0 text-[9px]"
+                        className="h-8 w-full min-w-0 px-0 text-[10px]"
                         aria-label={`تنظیم اختلاف خرید و فروش ${item.title}`}
                         title="تنظیم اختلاف خرید و فروش"
                     >
@@ -1038,7 +1038,7 @@ function AdminPriceRow({
             <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/50 pt-2 xl:hidden">
                 <div className="flex min-w-0 items-center gap-2">
                     <PriceDifference meta={meta} compact />
-                    <span className="truncate text-[10px] text-muted-foreground">
+                    <span className="truncate text-[11px] text-muted-foreground">
                         {formatPersianTime(item.updatedAt)}
                     </span>
                 </div>
@@ -1057,7 +1057,7 @@ function AdminPriceRow({
                         type="button"
                         variant="outline"
                         onClick={() => onEdit(item)}
-                        className="h-8 px-1.5 text-[9px]"
+                        className="h-8 px-1.5 text-[10px]"
                         aria-label={`تنظیم اختلاف خرید و فروش ${item.title}`}
                     >
                         اختلاف
@@ -1103,7 +1103,7 @@ function TradePriceControl({
     return (
         <div className="min-w-0 space-y-1.5">
             <PriceActionButton {...priceProps} />
-            <label className="flex min-h-8 cursor-pointer items-center justify-center gap-1.5 text-[11px] font-extrabold text-muted-foreground sm:text-xs xl:justify-start">
+            <label className="flex min-h-8 cursor-pointer items-center justify-center gap-1.5 text-[12px] font-extrabold text-muted-foreground sm:text-xs xl:justify-start">
                 <Switch
                     checked={tradeDisabled}
                     disabled={switchPending}
@@ -1182,7 +1182,7 @@ function PriceDifference({
     return (
         <span
             className={`inline-flex shrink-0 items-center gap-1 rounded-md font-bold ${
-                compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs"
+                compact ? "px-1.5 py-0.5 text-[11px]" : "px-2 py-0.5 text-xs"
             } ${tone}`}
         >
             <Arrow className="h-3 w-3" />

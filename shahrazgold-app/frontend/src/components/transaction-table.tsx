@@ -49,7 +49,7 @@ export function TransactionTable({ items }: { items: Transaction[] }) {
                   <span className={`font-bold ${tone.className}`}>{tone.label}</span>
                 </TableCell>
                 <TableCell>{t.assetTitle}</TableCell>
-                <TableCell className="text-[15px] font-semibold tabular-nums">{qty(t)}</TableCell>
+                <TableCell className="text-[16px] font-semibold tabular-nums">{qty(t)}</TableCell>
                 <TableCell className="text-base font-bold tabular-nums">
                   {formatRial(t.total)}
                 </TableCell>

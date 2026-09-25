@@ -37,7 +37,7 @@ export function PriceTable({ assets }: { assets: GoldAsset[] }) {
                 >
                   <span
                     className={
-                      "inline-flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold " +
+                      "inline-flex h-8 w-8 items-center justify-center rounded-lg text-[12px] font-bold " +
                       (a.category === "gold" || a.category === "melted"
                         ? "bg-gold-soft text-[color:var(--gold-dark)]"
                         : "bg-muted")
@@ -48,7 +48,7 @@ export function PriceTable({ assets }: { assets: GoldAsset[] }) {
                   </span>
                   <span>
                     <span className="block text-sm font-bold">{a.title}</span>
-                    <span className="block text-[11px] text-muted-foreground">
+                    <span className="block text-[12px] text-muted-foreground">
                       {/* {a.symbol} · */} هر {a.unit}
                     </span>
                   </span>

@@ -190,7 +190,7 @@ function TransactionsPage() {
                   <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-bold">{r.buyerName}</div>
-                      <div className="mt-1 text-[11px] text-muted-foreground" dir="ltr">
+                      <div className="mt-1 text-[12px] text-muted-foreground" dir="ltr">
                         {toPersianDigits(r.mobile)}
                       </div>
                     </div>
@@ -199,24 +199,24 @@ function TransactionsPage() {
 
                   <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/35 p-3 text-xs">
                     <div className="min-w-0">
-                      <div className="text-[10px] text-muted-foreground">محصول</div>
+                      <div className="text-[11px] text-muted-foreground">محصول</div>
                       <div className="mt-1 truncate font-bold">{r.productTitle}</div>
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[10px] text-muted-foreground">مقدار</div>
+                      <div className="text-[11px] text-muted-foreground">مقدار</div>
                       <div className="mt-1 font-bold">
                         {toPersianDigits(r.weight)} {r.unit}
                       </div>
                     </div>
                     <div className="col-span-2 min-w-0">
-                      <div className="text-[10px] text-muted-foreground">مبلغ معامله</div>
+                      <div className="text-[11px] text-muted-foreground">مبلغ معامله</div>
                       <div className="mt-1 truncate text-sm font-bold tabular-nums">
                         {formatNumber(r.total)} تومان
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex min-w-0 items-end justify-between gap-3 text-[11px] text-muted-foreground">
+                  <div className="flex min-w-0 items-end justify-between gap-3 text-[12px] text-muted-foreground">
                     <div className="min-w-0">
                       <div>
                         {formatPersianDate(r.createdAt)}، {formatPersianTime(r.createdAt)}

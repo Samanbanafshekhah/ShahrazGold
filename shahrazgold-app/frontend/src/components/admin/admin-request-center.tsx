@@ -148,7 +148,7 @@ export function AdminRequestCenter({ open, onOpenChange, requests }: AdminReques
                                 }
                             >
                                 در انتظار
-                                <span className="ms-1.5 rounded-full bg-[color:var(--warning)] px-1.5 py-0.5 text-[10px] text-white">
+                                <span className="ms-1.5 rounded-full bg-[color:var(--warning)] px-1.5 py-0.5 text-[11px] text-white">
                                     {toPersianDigits(pendingCount)}
                                 </span>
                             </button>
@@ -285,7 +285,7 @@ function RequestCard({
                     >
                         درخواست {request.tradeType === "sell" ? "فروش" : "خرید"}
                     </div>
-                    {/* <div className="mt-1 font-mono text-[11px] text-muted-foreground" dir="ltr">
+                    {/* <div className="mt-1 font-mono text-[12px] text-muted-foreground" dir="ltr">
                         {request.code}
                     </div> */}
                 </div>
@@ -300,15 +300,15 @@ function RequestCard({
                     </span>
                 </div>
                 <div className="mt-2 flex items-end justify-between gap-3 border-t border-border/70 pt-2">
-                    <span className="text-[11px] text-muted-foreground">مبلغ کل</span>
+                    <span className="text-[12px] text-muted-foreground">مبلغ کل</span>
                     <span className="text-sm font-black text-[color:var(--gold-dark)]">
                         {formatNumber(request.total)}
-                        <span className="ms-1 text-[10px] font-medium">تومان</span>
+                        <span className="ms-1 text-[11px] font-medium">تومان</span>
                     </span>
                 </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1" dir="ltr">
                     <Phone className="h-3 w-3" />
                     {toPersianDigits(request.mobile)}

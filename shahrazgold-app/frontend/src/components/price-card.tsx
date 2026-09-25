@@ -27,7 +27,7 @@ export function PriceCard({ asset }: { asset: GoldAsset }) {
             </span>
             <div className="min-w-0">
               <h3 className="truncate text-sm font-bold">{asset.title}</h3>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 {/* {asset.symbol} · */} هر {asset.unit}
               </p>
             </div>
@@ -43,7 +43,7 @@ export function PriceCard({ asset }: { asset: GoldAsset }) {
           <div className="text-lg font-extrabold tabular-nums">
             {formatMoney(asset.price, asset.currency)}
           </div>
-          <div className="mt-1 text-[11px] text-muted-foreground">
+          <div className="mt-1 text-[12px] text-muted-foreground">
             آخرین تغییر: {formatRelativeMinutes(asset.updatedAt)}
           </div>
         </div>
@@ -55,7 +55,7 @@ export function PriceCard({ asset }: { asset: GoldAsset }) {
         />
       </div>
       {asset.buy && (
-        <div className="mt-4 border-t border-border pt-3 text-[11px]">
+        <div className="mt-4 border-t border-border pt-3 text-[12px]">
           <div className="text-muted-foreground">
             خرید:{" "}
             <span className="font-bold tabular-nums text-foreground">

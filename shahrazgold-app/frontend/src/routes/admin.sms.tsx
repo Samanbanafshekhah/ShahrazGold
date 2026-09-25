@@ -302,7 +302,7 @@ function SmsPage() {
                                             </span>
                                             <span
                                                 className={
-                                                    "shrink-0 rounded-full px-2 py-1 text-[10px] font-bold " +
+                                                    "shrink-0 rounded-full px-2 py-1 text-[11px] font-bold " +
                                                     (recipient.is_active
                                                         ? "bg-positive-soft text-positive"
                                                         : "bg-muted text-muted-foreground")
@@ -349,7 +349,7 @@ function SmsPage() {
                             placeholder="متن پیامک را اینجا بنویسید…"
                             className="resize-y leading-7"
                         />
-                        <div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-muted-foreground">
+                        <div className="mt-2 flex flex-wrap justify-between gap-2 text-[12px] text-muted-foreground">
                             <span>
                                 {toPersianDigits(message.length)} از{" "}
                                 {toPersianDigits(MAX_MESSAGE_LENGTH)} کاراکتر
@@ -363,17 +363,17 @@ function SmsPage() {
                             <div className="text-lg font-black">
                                 {toPersianDigits(recipientCount)}
                             </div>
-                            <div className="text-[10px] text-muted-foreground">گیرنده</div>
+                            <div className="text-[11px] text-muted-foreground">گیرنده</div>
                         </div>
                         <div>
                             <div className="text-lg font-black">{toPersianDigits(parts)}</div>
-                            <div className="text-[10px] text-muted-foreground">بخش پیام</div>
+                            <div className="text-[11px] text-muted-foreground">بخش پیام</div>
                         </div>
                         <div>
                             <div className="text-lg font-black">
                                 {toPersianDigits(estimatedMessages)}
                             </div>
-                            <div className="text-[10px] text-muted-foreground">ارسال تخمینی</div>
+                            <div className="text-[11px] text-muted-foreground">ارسال تخمینی</div>
                         </div>
                     </div>
 

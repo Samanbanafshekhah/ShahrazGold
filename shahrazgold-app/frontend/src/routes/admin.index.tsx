@@ -134,7 +134,7 @@ function DashboardPage() {
                     <h2 className="min-w-0 text-sm font-bold">اطلاعیه بازار</h2>
                     <span
                         className={
-                            "ms-auto shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold " +
+                            "ms-auto shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold " +
                             (announcement.active
                                 ? "bg-positive-soft text-positive"
                                 : "bg-muted text-muted-foreground")

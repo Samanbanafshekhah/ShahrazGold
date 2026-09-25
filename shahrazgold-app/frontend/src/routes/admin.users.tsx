@@ -638,7 +638,7 @@ function UsersPage() {
                                 <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
                                     <div>
                                         <Label htmlFor="user-active">وضعیت حساب</Label>
-                                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                        <p className="mt-0.5 text-[12px] text-muted-foreground">
                                             کاربر فعال امکان ورود به حساب را دارد.
                                         </p>
                                     </div>
@@ -772,7 +772,7 @@ function OnlineUsers({ users }: { users: ReturnType<typeof useAdminOnlineUsers> 
                                     <MonitorSmartphone className="h-3.5 w-3.5" />
                                     <span>IP: {user.ipAddress}</span>
                                 </div>
-                                <div className="text-[11px]" dir="rtl">
+                                <div className="text-[12px]" dir="rtl">
                                     آخرین فعالیت: {formatRelativeMinutes(user.lastActivityAt)}
                                 </div>
                             </div>
@@ -850,7 +850,7 @@ function UserList({
                         <ContactInfo user={user} />
                         <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
                             <RoleBadge role={user.role} roleName={user.roleName} />
-                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1 text-[12px] text-muted-foreground">
                                 <CalendarDays className="h-3.5 w-3.5" />
                                 عضویت {formatPersianDate(user.createdAt)}
                             </span>
@@ -913,7 +913,7 @@ function UserIdentity({ user }: { user: AdminUser }) {
             </div>
             <div className="min-w-0">
                 <div className="truncate font-bold">{fullName(user)}</div>
-                <div className="mt-0.5 text-[11px] text-muted-foreground">
+                <div className="mt-0.5 text-[12px] text-muted-foreground">
                     شناسه {toPersianDigits(user.id)}
                 </div>
             </div>
@@ -943,7 +943,7 @@ function RoleBadge({ role, roleName }: { role: string; roleName: string }) {
     return (
         <span
             className={
-                "inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold " +
+                "inline-flex rounded-full px-2.5 py-1 text-[12px] font-bold " +
                 (role === "admin"
                     ? "bg-gold-soft text-[color:var(--gold-dark)]"
                     : "bg-muted text-muted-foreground")
@@ -958,7 +958,7 @@ function StatusBadge({ active }: { active: boolean }) {
     return (
         <span
             className={
-                "inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold " +
+                "inline-flex rounded-full px-2.5 py-1 text-[12px] font-bold " +
                 (active ? "bg-positive-soft text-positive" : "bg-negative-soft text-negative")
             }
         >
@@ -992,7 +992,7 @@ function UserStat({
             <strong className="mt-3 block text-xl font-extrabold sm:text-2xl">
                 {toPersianDigits(value)}
             </strong>
-            <span className="mt-0.5 block truncate text-[10px] text-muted-foreground sm:text-xs">
+            <span className="mt-0.5 block truncate text-[11px] text-muted-foreground sm:text-xs">
                 {label}
             </span>
         </div>

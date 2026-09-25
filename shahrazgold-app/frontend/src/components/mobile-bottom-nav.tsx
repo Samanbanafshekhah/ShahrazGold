@@ -30,7 +30,7 @@ export function MobileBottomNav() {
               <Link
                 to={to}
                 className={
-                  "flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[11px] transition-colors " +
+                  "flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[12px] transition-colors " +
                   (active ? "text-[color:var(--gold-dark)] font-bold" : "text-neutral-500")
                 }
               >

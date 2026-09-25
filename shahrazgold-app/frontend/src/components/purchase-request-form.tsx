@@ -216,7 +216,7 @@ export function PurchaseRequestForm({
                         aria-describedby={`${amountId}-help`}
                         className="h-11 rounded-xl bg-card tabular-nums"
                     />
-                    <p id={`${amountId}-help`} className="text-[11px] text-muted-foreground">
+                    <p id={`${amountId}-help`} className="text-[12px] text-muted-foreground">
                         {isCountUnit ? "تعداد تقریبی:" : "وزن تقریبی:"}{" "}
                         <b>{formatPurchaseQuantity(calculation.quantity, product.unit)}</b>
                     </p>
@@ -254,7 +254,7 @@ export function PurchaseRequestForm({
                         aria-describedby={`${quantityId}-help`}
                         className="h-11 rounded-xl bg-card tabular-nums"
                     />
-                    <p id={`${quantityId}-help`} className="text-[11px] text-muted-foreground">
+                    <p id={`${quantityId}-help`} className="text-[12px] text-muted-foreground">
                         مبلغ تقریبی:{" "}
                         <b>{formatPurchaseMoney(calculation.total, product.priceUnit)}</b>
                     </p>
@@ -264,7 +264,7 @@ export function PurchaseRequestForm({
             {(validationError || availabilityError || managerOfflineError || submitError) && (
                 <p
                     role="alert"
-                    className="rounded-lg bg-negative-soft px-3 py-2 text-[11px] text-negative"
+                    className="rounded-lg bg-negative-soft px-3 py-2 text-[12px] text-negative"
                 >
                     {submitError ?? managerOfflineError ?? availabilityError ?? validationError}
                 </p>
@@ -279,7 +279,7 @@ export function PurchaseRequestForm({
                 action={action}
             />
 
-            <p className="text-[10px] leading-5 text-muted-foreground sm:text-[11px]">
+            <p className="text-[11px] leading-5 text-muted-foreground sm:text-[12px]">
                 مبلغ نهایی سفارش بر اساس قیمت تأییدشده در زمان بررسی درخواست محاسبه می‌شود. پرداخت
                 آنلاین انجام نمی‌شود.
             </p>
@@ -336,7 +336,7 @@ function PurchaseSummary({
             <h3 id="purchase-summary-title" className="text-xs font-bold">
                 خلاصه درخواست
             </h3>
-            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[10px] sm:text-[11px]">
+            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] sm:text-[12px]">
                 <SummaryItem label="نوع درخواست" value={action === "buy" ? "خرید" : "فروش"} />
                 <SummaryItem label="محصول" value={product.title} />
                 <SummaryItem

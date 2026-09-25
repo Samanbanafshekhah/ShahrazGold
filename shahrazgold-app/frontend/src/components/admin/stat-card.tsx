@@ -25,9 +25,9 @@ export function StatCard({
     <div className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-elegant transition hover:shadow-md sm:p-4">
       <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] leading-5 text-muted-foreground sm:text-xs">{label}</div>
+          <div className="text-[12px] leading-5 text-muted-foreground sm:text-xs">{label}</div>
           <div className="mt-1.5 text-lg font-bold tracking-tight sm:mt-2 sm:text-2xl">{value}</div>
-          {hint && <div className="mt-1 text-[11px] text-muted-foreground">{hint}</div>}
+          {hint && <div className="mt-1 text-[12px] text-muted-foreground">{hint}</div>}
         </div>
         {Icon && (
           <div

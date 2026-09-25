@@ -52,6 +52,20 @@
     --color-negative: var(--negative);
     --color-warning: var(--warning);
     --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+    /* Slightly larger type across the public site, customer dashboard, and admin. */
+    --text-xs: 0.8125rem;
+    --text-sm: 0.9375rem;
+    --text-base: 1.0625rem;
+    --text-lg: 1.1875rem;
+    --text-xl: 1.3125rem;
+    --text-2xl: 1.625rem;
+    --text-3xl: 2rem;
+    --text-4xl: 2.375rem;
+    --text-5xl: 3.125rem;
+    --text-6xl: 3.875rem;
+    --text-7xl: 4.625rem;
+    --text-8xl: 6.125rem;
+    --text-9xl: 8.125rem;
 }
 
 :root {
