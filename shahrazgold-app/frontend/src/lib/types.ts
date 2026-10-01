@@ -63,4 +63,8 @@ export interface User {
     roleId?: number;
     isActive?: boolean;
     canReorderProducts?: boolean;
+    transactionLimit: number | null;
+    transactionLimitUsed: number;
+    transactionLimitRemaining: number | null;
+    transactionLimitUnlimited: boolean;
 }

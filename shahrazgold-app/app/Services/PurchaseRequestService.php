@@ -24,12 +24,13 @@ final class PurchaseRequestService
         private TradePriceCalculator $calculator,
         private AuditService $audit,
         private TradeAvailabilityService $tradeAvailability,
+        private TransactionLimitService $transactionLimits,
     ) {}
 
     public function create(User $user, array $input): PurchaseRequest
     {
         return DB::transaction(function () use ($user, $input) {
-            User::query()->lockForUpdate()->findOrFail($user->id);
+            $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
             $tradeType = TradeType::from($input['trade_type']);
             abort_unless(AppSetting::managerOnline(), 409, 'MANAGER_OFFLINE');
             $existing = PurchaseRequest::query()->where('user_id', $user->id)->where('client_reference', $input['client_reference'])->first();
@@ -43,15 +44,17 @@ final class PurchaseRequestService
             abort_if(! $price, 409, 'PRICE_UNAVAILABLE');
             $entryMode = EntryMode::from($input['entry_mode']);
             abort_unless($product->is_active, 409, 'این محصول غیرفعال است.');
-            abort_if($tradeType === TradeType::CustomerBuy && ! $user->canBuyProduct($product->id), 403, 'PRODUCT_ACCESS_DENIED');
+            abort_if($tradeType === TradeType::CustomerBuy && ! $lockedUser->canBuyProduct($product->id), 403, 'PRODUCT_ACCESS_DENIED');
             abort_if($tradeType === TradeType::CustomerBuy && ! $product->is_buyable, 409, 'خرید این محصول در حال حاضر امکان‌پذیر نیست.');
             abort_if($tradeType === TradeType::CustomerSell && ! $product->is_sellable, 409, 'فروش این محصول در حال حاضر امکان‌پذیر نیست.');
             $this->tradeAvailability->ensureOpen($product, $tradeType);
-            $calculation = $this->calculator->calculate($product, $price, $tradeType, $entryMode, $input['quantity'] ?? null, $input['amount_rial'] ?? null, $user);
+            $calculation = $this->calculator->calculate($product, $price, $tradeType, $entryMode, $input['quantity'] ?? null, $input['amount_rial'] ?? null, $lockedUser);
 
             if ((int) $input['expected_product_price_id'] !== $price->id) {
                 throw new PriceChangedException($this->previewPayload($product, $tradeType, $entryMode, $calculation));
             }
+
+            $this->transactionLimits->ensureCanCreateTransaction($lockedUser, $calculation['total_amount_rial']);
 
             $request = PurchaseRequest::query()->create([
                 'request_number' => 'SG-'.now()->utc()->format('YmdHis').'-'.strtoupper(Str::random(8)),

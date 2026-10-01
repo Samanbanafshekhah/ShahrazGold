@@ -18,7 +18,9 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $q = User::query()->with('accessRole');
+        $q = User::query()->with('accessRole')->withSum([
+            'purchaseRequests as transaction_limit_used_rial' => fn ($query) => $query->whereIn('status', ['pending', 'approved', 'completed']),
+        ], 'total_amount_rial');
         $q->when($request->filled('search'), fn ($x) => $x->where(function ($s) use ($request) {
             $term = '%'.$request->search.'%';
             $s->whereLike('first_name', $term)->orWhereLike('last_name', $term)->orWhereLike('mobile', $term)->orWhereLike('email', $term);
@@ -31,7 +33,7 @@ class UserController extends Controller
 
     public function store(UserRequest $request, AuditService $audit): JsonResponse
     {
-        $data = $this->normalizeRole($request->safe()->except(['password_confirmation']));
+        $data = $this->normalizeUserData($request);
         $user = User::create($data);
         $audit->record('user.created', $user, null, $user->toArray());
 
@@ -49,7 +51,7 @@ class UserController extends Controller
             $activeAdmins = $this->lockActiveAdmins();
             $locked = User::query()->lockForUpdate()->findOrFail($user->id);
             $old = $locked->toArray();
-            $data = $this->normalizeRole($request->safe()->except(['password_confirmation']));
+            $data = $this->normalizeUserData($request);
             if (empty($data['password'])) {
                 unset($data['password']);
             }
@@ -121,6 +123,16 @@ class UserController extends Controller
         }
 
         return $data;
+    }
+
+    private function normalizeUserData(UserRequest $request): array
+    {
+        $data = $request->safe()->except(['password_confirmation', 'transaction_limit']);
+        if ($request->exists('transaction_limit')) {
+            $data['transaction_limit_rial'] = $request->input('transaction_limit');
+        }
+
+        return $this->normalizeRole($data);
     }
 
     private function lockActiveAdmins()

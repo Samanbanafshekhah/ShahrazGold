@@ -16,6 +16,10 @@ interface ApiUser {
     role_id?: number | null;
     is_active: boolean;
     can_reorder_products?: boolean;
+    transaction_limit: number | null;
+    transaction_limit_used: number;
+    transaction_limit_remaining: number | null;
+    transaction_limit_unlimited: boolean;
     mobile_verified_at?: string | null;
     created_at?: string | null;
 }
@@ -72,6 +76,10 @@ function mapUser(user: ApiUser): User {
         roleId: user.role_id ?? undefined,
         isActive: user.is_active,
         canReorderProducts: user.can_reorder_products === true,
+        transactionLimit: user.transaction_limit,
+        transactionLimitUsed: user.transaction_limit_used,
+        transactionLimitRemaining: user.transaction_limit_remaining,
+        transactionLimitUnlimited: user.transaction_limit_unlimited,
     };
 }
 
@@ -107,6 +115,14 @@ async function validateSession() {
         setAccessToken(null);
         writeUser(null);
     }
+}
+
+export async function refreshCurrentUser(): Promise<User | null> {
+    if (!getAccessToken()) return null;
+    const response = await apiRequest<ApiUser>("auth/me");
+    const user = mapUser(response.data);
+    writeUser(user);
+    return user;
 }
 
 export function subscribe(listener: Listener) {

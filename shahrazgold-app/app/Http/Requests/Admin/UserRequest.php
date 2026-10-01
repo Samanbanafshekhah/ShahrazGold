@@ -30,6 +30,7 @@ class UserRequest extends FormRequest
                 'role' => ['prohibited'],
                 'role_id' => ['prohibited'],
                 'is_active' => ['prohibited'],
+                'transaction_limit' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:9000000000000000'],
             ];
         }
 
@@ -39,6 +40,7 @@ class UserRequest extends FormRequest
             'email' => ['nullable', 'email:rfc', 'max:255', Rule::unique('users')->ignore($id)],
             'password' => ['required', 'confirmed', Password::min(8)],
             'role' => ['required', Rule::enum(UserRole::class)], 'role_id' => ['nullable', 'integer', 'exists:roles,id'], 'is_active' => ['sometimes', 'boolean'],
+            'transaction_limit' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:9000000000000000'],
         ];
     }
 }

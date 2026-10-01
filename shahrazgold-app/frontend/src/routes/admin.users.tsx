@@ -51,7 +51,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ApiError, apiErrorMessage, apiRequest } from "@/lib/api";
 import { useAdminOnlineUsers } from "@/lib/admin-data";
-import { formatPersianDate, formatRelativeMinutes, toPersianDigits } from "@/lib/formatters";
+import {
+    formatPersianDate,
+    formatRelativeMinutes,
+    formatToman,
+    toPersianDigits,
+} from "@/lib/formatters";
 
 export const Route = createFileRoute("/admin/users")({
     component: UsersPage,
@@ -79,6 +84,10 @@ type AdminUser = {
     mobileVerifiedAt: string | null;
     lastLoginAt: string | null;
     createdAt: string;
+    transactionLimit: number | null;
+    transactionLimitUsed: number;
+    transactionLimitRemaining: number | null;
+    transactionLimitUnlimited: boolean;
 };
 
 type ApiUser = {
@@ -95,6 +104,10 @@ type ApiUser = {
     mobile_verified_at?: string | null;
     last_login_at?: string | null;
     created_at: string;
+    transaction_limit: number | null;
+    transaction_limit_used: number;
+    transaction_limit_remaining: number | null;
+    transaction_limit_unlimited: boolean;
 };
 
 type UserForm = {
@@ -106,6 +119,7 @@ type UserForm = {
     passwordConfirmation: string;
     role: string;
     active: boolean;
+    transactionLimit: string;
 };
 
 type UserFormErrors = Partial<Record<keyof UserForm | "general", string>>;
@@ -119,6 +133,7 @@ const EMPTY_FORM: UserForm = {
     passwordConfirmation: "",
     role: "customer",
     active: true,
+    transactionLimit: "",
 };
 
 function mapUser(user: ApiUser): AdminUser {
@@ -135,6 +150,10 @@ function mapUser(user: ApiUser): AdminUser {
         mobileVerifiedAt: user.mobile_verified_at ?? null,
         lastLoginAt: user.last_login_at ?? null,
         createdAt: user.created_at,
+        transactionLimit: user.transaction_limit,
+        transactionLimitUsed: user.transaction_limit_used,
+        transactionLimitRemaining: user.transaction_limit_remaining,
+        transactionLimitUnlimited: user.transaction_limit_unlimited,
     };
 }
 
@@ -146,6 +165,16 @@ function normalizeDigits(value: string): string {
 
 function normalizeMobile(value: string): string {
     return normalizeDigits(value).replace(/[\s-]/g, "");
+}
+
+function normalizeTransactionLimit(value: string): string {
+    return normalizeDigits(value)
+        .replace(/[,٬\s]/g, "")
+        .replace(/\D/g, "");
+}
+
+function formatTransactionLimitInput(value: string): string {
+    return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function fullName(user: AdminUser): string {
@@ -220,6 +249,8 @@ function UsersPage() {
             firstName: user.firstName,
             lastName: user.lastName,
             mobile: user.mobile,
+            transactionLimit:
+                user.transactionLimit === null ? "" : String(user.transactionLimit / 10),
         });
         setErrors({});
         setDialogOpen(true);
@@ -238,6 +269,8 @@ function UsersPage() {
             next.lastName = "نام خانوادگی باید حداقل ۲ کاراکتر باشد.";
         const mobile = normalizeMobile(form.mobile);
         if (!/^09\d{9}$/.test(mobile)) next.mobile = "شماره موبایل باید با ۰۹ شروع و ۱۱ رقم باشد.";
+        if (form.transactionLimit && Number(form.transactionLimit) > 900_000_000_000_000)
+            next.transactionLimit = "حد معامله واردشده بیش از مقدار مجاز است.";
         if (editingUser) {
             if (form.password && form.password.length < 8)
                 next.password = "رمز عبور باید حداقل ۸ کاراکتر باشد.";
@@ -265,6 +298,9 @@ function UsersPage() {
                 first_name: form.firstName.trim(),
                 last_name: form.lastName.trim(),
                 mobile: normalizeMobile(form.mobile),
+                transaction_limit: form.transactionLimit
+                    ? Number(form.transactionLimit) * 10
+                    : null,
             };
             const response = await apiRequest<ApiUser>(
                 editingUser ? `admin/users/${editingUser.id}` : "admin/users",
@@ -328,6 +364,7 @@ function UsersPage() {
                     role: "role",
                     role_id: "role",
                     is_active: "active",
+                    transaction_limit: "transactionLimit",
                 };
                 for (const [field, messages] of Object.entries(error.errors)) {
                     const formField = fieldMap[field];
@@ -543,6 +580,33 @@ function UsersPage() {
                                     aria-invalid={Boolean(errors.mobile)}
                                 />
                             </FormField>
+                            <FormField
+                                label="حد معامله (تومان)"
+                                htmlFor="user-transaction-limit"
+                                error={errors.transactionLimit}
+                            >
+                                <Input
+                                    id="user-transaction-limit"
+                                    inputMode="numeric"
+                                    dir="ltr"
+                                    value={formatTransactionLimitInput(form.transactionLimit)}
+                                    onChange={(event) =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            transactionLimit: normalizeTransactionLimit(
+                                                event.target.value,
+                                            ),
+                                        }))
+                                    }
+                                    placeholder="خالی = نامحدود"
+                                    className="text-left tabular-nums"
+                                    aria-invalid={Boolean(errors.transactionLimit)}
+                                />
+                                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                    خالی یعنی نامحدود؛ صفر یعنی عدم امکان ثبت معامله.
+                                </p>
+                            </FormField>
+                            {editingUser && <TransactionLimitSummary user={editingUser} />}
                             {!editingUser && (
                                 <FormField
                                     label="ایمیل (اختیاری)"
@@ -796,13 +860,14 @@ function UserList({
     return (
         <>
             <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[900px] text-right text-sm">
+                <table className="w-full min-w-[1050px] text-right text-sm">
                     <thead className="bg-muted/40 text-xs text-muted-foreground">
                         <tr>
                             <th className="p-3 font-medium">کاربر</th>
                             <th className="p-3 font-medium">اطلاعات تماس</th>
                             <th className="p-3 font-medium">نقش</th>
                             <th className="p-3 font-medium">وضعیت</th>
+                            <th className="p-3 font-medium">حد معامله</th>
                             <th className="p-3 font-medium">آخرین ورود</th>
                             <th className="p-3 font-medium">تاریخ عضویت</th>
                             <th className="p-3 font-medium">عملیات</th>
@@ -822,6 +887,9 @@ function UserList({
                                 </td>
                                 <td className="p-3">
                                     <StatusBadge active={user.active} />
+                                </td>
+                                <td className="p-3">
+                                    <TransactionLimitCompact user={user} />
                                 </td>
                                 <td className="p-3 text-xs text-muted-foreground">
                                     {user.lastLoginAt
@@ -848,6 +916,7 @@ function UserList({
                             <StatusBadge active={user.active} />
                         </div>
                         <ContactInfo user={user} />
+                        <TransactionLimitCompact user={user} />
                         <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
                             <RoleBadge role={user.role} roleName={user.roleName} />
                             <span className="flex items-center gap-1 text-[12px] text-muted-foreground">
@@ -860,6 +929,51 @@ function UserList({
                 ))}
             </div>
         </>
+    );
+}
+
+function TransactionLimitCompact({ user }: { user: AdminUser }) {
+    if (user.transactionLimitUnlimited) {
+        return <span className="text-xs font-bold text-positive">نامحدود</span>;
+    }
+
+    return (
+        <div className="text-xs tabular-nums">
+            <div className="font-bold">{formatToman(user.transactionLimit ?? 0)}</div>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+                مصرف {formatToman(user.transactionLimitUsed)}
+            </div>
+        </div>
+    );
+}
+
+function TransactionLimitSummary({ user }: { user: AdminUser }) {
+    const items = [
+        [
+            "حد معامله",
+            user.transactionLimitUnlimited ? "نامحدود" : formatToman(user.transactionLimit ?? 0),
+        ],
+        ["مصرف‌شده", formatToman(user.transactionLimitUsed)],
+        [
+            "باقی‌مانده",
+            user.transactionLimitUnlimited
+                ? "نامحدود"
+                : formatToman(user.transactionLimitRemaining ?? 0),
+        ],
+    ];
+
+    return (
+        <dl className="grid grid-cols-3 gap-2 sm:col-span-2">
+            {items.map(([label, value]) => (
+                <div
+                    key={label}
+                    className="rounded-xl border border-border bg-muted/35 px-2.5 py-2"
+                >
+                    <dt className="text-[10px] text-muted-foreground">{label}</dt>
+                    <dd className="mt-1 text-[11px] font-extrabold tabular-nums">{value}</dd>
+                </div>
+            ))}
+        </dl>
     );
 }
 

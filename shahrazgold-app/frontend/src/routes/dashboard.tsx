@@ -6,11 +6,12 @@ import { MarketPriceBoard, PriceUpdateStatus } from "@/components/market-price-b
 import { PurchaseRequestModal } from "@/components/purchase-request-modal";
 import { refreshAssets, refreshTransactions, useAssets, useTransactions } from "@/lib/api-data";
 import { apiErrorMessage, apiRequest } from "@/lib/api";
-import { useCurrentUser } from "@/lib/auth";
+import { refreshCurrentUser, useCurrentUser } from "@/lib/auth";
 import { purchaseProductFromAsset, type TradeAction } from "@/lib/purchase";
 import { Info } from "lucide-react";
 import { useMarketAnnouncement } from "@/lib/market-api";
 import { playNotificationSound, prepareNotificationSound } from "@/lib/notification-sound";
+import { formatToman } from "@/lib/formatters";
 
 export const Route = createFileRoute("/dashboard")({
     component: DashboardPage,
@@ -43,7 +44,10 @@ function DashboardPage() {
         [assets],
     );
 
-    useEffect(() => prepareNotificationSound(), []);
+    useEffect(() => {
+        prepareNotificationSound();
+        void refreshCurrentUser().catch(() => undefined);
+    }, []);
 
     async function onRefresh() {
         setRefreshing(true);
@@ -106,7 +110,10 @@ function DashboardPage() {
             transactions.map((transaction) => [transaction.id, transaction.status]),
         );
 
-        if (changedRequests.length > 0) playNotificationSound();
+        if (changedRequests.length > 0) {
+            playNotificationSound();
+            void refreshCurrentUser().catch(() => undefined);
+        }
 
         changedRequests.forEach((transaction) => {
             const approved = transaction.status === "approved";
@@ -183,6 +190,8 @@ function DashboardPage() {
                     </aside>
                 )}
 
+                {user && <TransactionLimitCard user={user} />}
+
                 <PriceUpdateStatus
                     updatedAt={latestUpdatedAt}
                     refreshing={refreshing}
@@ -222,8 +231,39 @@ function DashboardPage() {
                 action={selectedTrade?.action}
                 returnFocusRef={purchaseTriggerRef}
                 onClose={() => setSelectedTrade(null)}
-                onSuccess={() => setSelectedTrade(null)}
+                onSuccess={() => {
+                    setSelectedTrade(null);
+                    void refreshCurrentUser().catch(() => undefined);
+                }}
             />
         </AppShell>
+    );
+}
+
+function TransactionLimitCard({ user }: { user: NonNullable<ReturnType<typeof useCurrentUser>> }) {
+    const values = user.transactionLimitUnlimited
+        ? [{ label: "حد معامله", value: "نامحدود" }]
+        : [
+              { label: "حد معامله", value: formatToman(user.transactionLimit ?? 0) },
+              { label: "مصرف‌شده", value: formatToman(user.transactionLimitUsed) },
+              { label: "باقی‌مانده", value: formatToman(user.transactionLimitRemaining ?? 0) },
+          ];
+
+    return (
+        <section className="mb-4 rounded-xl border border-border bg-card px-3.5 py-3 shadow-elegant sm:mb-5 sm:px-5">
+            <h2 className="text-xs font-extrabold text-foreground sm:text-sm">حد معامله کاربر</h2>
+            <dl
+                className={`mt-2 grid gap-2 ${values.length > 1 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1"}`}
+            >
+                {values.map((item) => (
+                    <div key={item.label} className="rounded-lg bg-muted/45 px-3 py-2">
+                        <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                        <dd className="mt-0.5 text-xs font-extrabold tabular-nums sm:text-sm">
+                            {item.value}
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        </section>
     );
 }
