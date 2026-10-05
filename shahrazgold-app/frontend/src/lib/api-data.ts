@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { ApiError, apiErrorMessage, apiRequest } from "./api";
 import { subscribeToPriceUpdates, type PriceUpdatedPayload } from "./price-sync";
 import type { GoldAsset, Transaction, TransactionStatus } from "./types";
-import type { PurchaseMode, PurchaseProduct, TradeAction } from "./purchase";
+import {
+    calculatePurchase,
+    PurchasePriceChangedError,
+    type PurchaseMode,
+    type PurchaseProduct,
+    type TradeAction,
+} from "./purchase";
 
 interface ApiProduct {
     id: number;
@@ -66,6 +72,9 @@ interface ApiPurchaseRequest {
 
 interface TradePreview {
     product_price_id: number;
+    final_unit_price_rial: string;
+    quantity: string;
+    total_amount_rial: string;
 }
 
 type Listener = () => void;
@@ -530,6 +539,7 @@ export async function submitPurchase(input: {
     mode: PurchaseMode;
     amount: string;
     quantity: string;
+    isPriceCurrent?: () => boolean;
 }): Promise<Transaction> {
     if (!input.product.productId) {
         throw new Error("شناسه محصول از API دریافت نشده است.");
@@ -550,6 +560,24 @@ export async function submitPurchase(input: {
         method: "POST",
         body: JSON.stringify(tradePayload),
     });
+    const expected = calculatePurchase(
+        input.mode,
+        input.amount,
+        input.quantity,
+        input.product.unitPrice,
+        input.product.amountDivisor,
+        input.product.finalAmountMultiplier,
+    );
+    if (
+        input.isPriceCurrent?.() === false ||
+        (input.product.priceId !== undefined &&
+            input.product.priceId !== preview.data.product_price_id) ||
+        Number(preview.data.final_unit_price_rial) !== Math.round(input.product.unitPrice * 10) ||
+        Math.abs(Number(preview.data.total_amount_rial) - Math.round(expected.total * 10)) > 1
+    ) {
+        void refreshAssetPrices().catch(() => undefined);
+        throw new PurchasePriceChangedError(input.action);
+    }
     const requestPayload = {
         ...tradePayload,
         client_reference: crypto.randomUUID(),
@@ -576,8 +604,9 @@ export async function submitPurchase(input: {
         ) {
             throw new Error("مدیر آفلاین است؛ در حال حاضر امکان ثبت درخواست خرید وجود ندارد.");
         }
-        if (error instanceof ApiError && error.status === 409) {
-            throw new Error("قیمت تغییر کرده است؛ قیمت‌ها را به‌روزرسانی و دوباره تأیید کنید.");
+        if (error instanceof ApiError && error.status === 409 && error.code === "PRICE_CHANGED") {
+            void refreshAssetPrices().catch(() => undefined);
+            throw new PurchasePriceChangedError(input.action);
         }
         throw error;
     }

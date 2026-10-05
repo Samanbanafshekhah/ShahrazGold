@@ -14,6 +14,9 @@ import {
     formatPurchaseQuantity,
     getPurchaseAvailabilityError,
     normalizePurchaseInput,
+    priceChangedMessage,
+    purchasePriceChanged,
+    PurchasePriceChangedError,
     type PurchaseMode,
     type PurchaseProduct,
     type TradeAction,
@@ -36,7 +39,8 @@ export function PurchaseRequestForm({
     const isCountUnit = product.unit === "عدد";
     const amountId = useId();
     const quantityId = useId();
-    const [mode, setMode] = useState<PurchaseMode>("amount");
+    const [selectedMode, setMode] = useState<PurchaseMode>("amount");
+    const mode: PurchaseMode = isCountUnit ? "quantity" : selectedMode;
     const [amount, setAmount] = useState("");
     const [quantity, setQuantity] = useState("");
     const [invalidInput, setInvalidInput] = useState(false);
@@ -45,6 +49,17 @@ export function PurchaseRequestForm({
     const submittingRef = useRef(false);
     const [submitError, setSubmitError] = useState<string>();
     const [managerOnline, setManagerOnline] = useState<boolean | null>(null);
+    const [initialProduct] = useState(() => product);
+    const [priceChangeDetected, setPriceChangeDetected] = useState(false);
+    const priceMismatch = purchasePriceChanged(initialProduct, product);
+    const priceChanged = priceChangeDetected || priceMismatch;
+    const priceChangedRef = useRef(priceChanged);
+    priceChangedRef.current = priceChanged;
+    const priceChangeError = priceChanged ? priceChangedMessage(action) : undefined;
+
+    useEffect(() => {
+        if (priceMismatch) setPriceChangeDetected(true);
+    }, [priceMismatch]);
     const calculation = useMemo(
         () =>
             calculatePurchase(
@@ -79,6 +94,7 @@ export function PurchaseRequestForm({
             : undefined;
     const dirty = Boolean(amount || quantity);
     const canSubmit =
+        !priceChanged &&
         !availabilityError &&
         !managerOfflineError &&
         !invalidInput &&
@@ -137,11 +153,19 @@ export function PurchaseRequestForm({
         submittingRef.current = true;
         setSubmitting(true);
         try {
-            const transaction = await submitPurchase({ product, action, mode, amount, quantity });
+            const transaction = await submitPurchase({
+                product: initialProduct,
+                action,
+                mode,
+                amount,
+                quantity,
+                isPriceCurrent: () => !priceChangedRef.current,
+            });
             toast.success(`درخواست ${actionLabel} ثبت شد و به مدیر ارسال شد.`);
             resetForm();
             onSuccess(transaction);
         } catch (error) {
+            if (error instanceof PurchasePriceChangedError) setPriceChangeDetected(true);
             console.error(error);
             setSubmitError(
                 error instanceof Error
@@ -156,40 +180,42 @@ export function PurchaseRequestForm({
 
     return (
         <div className="grid gap-4">
-            <div
-                className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/45 p-1"
-                role="tablist"
-                aria-label={`روش ثبت ${actionLabel}`}
-            >
-                <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === "amount"}
-                    onClick={() => changeMode("amount")}
-                    className={
-                        "rounded-lg px-3 py-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
-                        (mode === "amount"
-                            ? "bg-card text-[color:var(--gold-dark)] shadow-elegant"
-                            : "text-muted-foreground hover:text-foreground")
-                    }
+            {!isCountUnit && (
+                <div
+                    className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/45 p-1"
+                    role="tablist"
+                    aria-label={`روش ثبت ${actionLabel}`}
                 >
-                    بر اساس مبلغ
-                </button>
-                <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === "quantity"}
-                    onClick={() => changeMode("quantity")}
-                    className={
-                        "rounded-lg px-3 py-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
-                        (mode === "quantity"
-                            ? "bg-card text-[color:var(--gold-dark)] shadow-elegant"
-                            : "text-muted-foreground hover:text-foreground")
-                    }
-                >
-                    {isCountUnit ? "بر اساس تعداد" : "بر اساس وزن"}
-                </button>
-            </div>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mode === "amount"}
+                        onClick={() => changeMode("amount")}
+                        className={
+                            "rounded-lg px-3 py-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                            (mode === "amount"
+                                ? "bg-card text-[color:var(--gold-dark)] shadow-elegant"
+                                : "text-muted-foreground hover:text-foreground")
+                        }
+                    >
+                        بر اساس مبلغ
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mode === "quantity"}
+                        onClick={() => changeMode("quantity")}
+                        className={
+                            "rounded-lg px-3 py-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                            (mode === "quantity"
+                                ? "bg-card text-[color:var(--gold-dark)] shadow-elegant"
+                                : "text-muted-foreground hover:text-foreground")
+                        }
+                    >
+                        {isCountUnit ? "بر اساس تعداد" : "بر اساس وزن"}
+                    </button>
+                </div>
+            )}
 
             {mode === "amount" ? (
                 <div className="grid gap-2">
@@ -261,12 +287,20 @@ export function PurchaseRequestForm({
                 </div>
             )}
 
-            {(validationError || availabilityError || managerOfflineError || submitError) && (
+            {(priceChangeError ||
+                validationError ||
+                availabilityError ||
+                managerOfflineError ||
+                submitError) && (
                 <p
                     role="alert"
                     className="rounded-lg bg-negative-soft px-3 py-2 text-[12px] text-negative"
                 >
-                    {submitError ?? managerOfflineError ?? availabilityError ?? validationError}
+                    {priceChangeError ??
+                        submitError ??
+                        managerOfflineError ??
+                        availabilityError ??
+                        validationError}
                 </p>
             )}
 

@@ -3,6 +3,9 @@ export type LivePriceCategory = "all" | "gold" | "coin" | "melted" | "currency" 
 export interface LivePriceAsset {
   id: string;
   productId?: number;
+  priceId?: number;
+  priceVersion?: number;
+  priceAdjustmentVersion?: number;
   unit?: string;
   updatedAt?: string;
   amountDivisor?: number;

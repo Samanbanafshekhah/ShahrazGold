@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
     CalendarDays,
     CheckCircle2,
+    CircleDollarSign,
     Loader2,
     Mail,
     MonitorSmartphone,
@@ -51,12 +52,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ApiError, apiErrorMessage, apiRequest } from "@/lib/api";
 import { useAdminOnlineUsers } from "@/lib/admin-data";
-import {
-    formatPersianDate,
-    formatRelativeMinutes,
-    formatToman,
-    toPersianDigits,
-} from "@/lib/formatters";
+import { formatPersianDate, formatRelativeMinutes, toPersianDigits } from "@/lib/formatters";
 
 export const Route = createFileRoute("/admin/users")({
     component: UsersPage,
@@ -84,11 +80,17 @@ type AdminUser = {
     mobileVerifiedAt: string | null;
     lastLoginAt: string | null;
     createdAt: string;
-    transactionLimit: number | null;
-    transactionLimitUsed: number;
-    transactionLimitRemaining: number | null;
-    transactionLimitUnlimited: boolean;
+    purchaseLimits: PurchaseLimits;
 };
+
+type PurchaseLimits = Record<
+    "grams" | "count",
+    {
+        limit: number | null;
+        used: string;
+        remaining: number | null;
+    }
+>;
 
 type ApiUser = {
     id: number;
@@ -104,10 +106,7 @@ type ApiUser = {
     mobile_verified_at?: string | null;
     last_login_at?: string | null;
     created_at: string;
-    transaction_limit: number | null;
-    transaction_limit_used: number;
-    transaction_limit_remaining: number | null;
-    transaction_limit_unlimited: boolean;
+    purchase_limits: PurchaseLimits;
 };
 
 type UserForm = {
@@ -119,7 +118,6 @@ type UserForm = {
     passwordConfirmation: string;
     role: string;
     active: boolean;
-    transactionLimit: string;
 };
 
 type UserFormErrors = Partial<Record<keyof UserForm | "general", string>>;
@@ -133,7 +131,6 @@ const EMPTY_FORM: UserForm = {
     passwordConfirmation: "",
     role: "customer",
     active: true,
-    transactionLimit: "",
 };
 
 function mapUser(user: ApiUser): AdminUser {
@@ -150,10 +147,7 @@ function mapUser(user: ApiUser): AdminUser {
         mobileVerifiedAt: user.mobile_verified_at ?? null,
         lastLoginAt: user.last_login_at ?? null,
         createdAt: user.created_at,
-        transactionLimit: user.transaction_limit,
-        transactionLimitUsed: user.transaction_limit_used,
-        transactionLimitRemaining: user.transaction_limit_remaining,
-        transactionLimitUnlimited: user.transaction_limit_unlimited,
+        purchaseLimits: user.purchase_limits,
     };
 }
 
@@ -170,11 +164,12 @@ function normalizeMobile(value: string): string {
 function normalizeTransactionLimit(value: string): string {
     return normalizeDigits(value)
         .replace(/[,٬\s]/g, "")
-        .replace(/\D/g, "");
+        .replace(/٫/g, ".")
+        .replace(/[^\d.]/g, "");
 }
 
 function formatTransactionLimitInput(value: string): string {
-    return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return toPersianDigits(value);
 }
 
 function fullName(user: AdminUser): string {
@@ -192,6 +187,11 @@ function UsersPage() {
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+    const [limitUser, setLimitUser] = useState<AdminUser | null>(null);
+    const [transactionLimit, setTransactionLimit] = useState("");
+    const [countLimit, setCountLimit] = useState("");
+    const [transactionLimitError, setTransactionLimitError] = useState("");
+    const [limitSubmitting, setLimitSubmitting] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
     const [form, setForm] = useState<UserForm>(EMPTY_FORM);
     const [errors, setErrors] = useState<UserFormErrors>({});
@@ -249,8 +249,6 @@ function UsersPage() {
             firstName: user.firstName,
             lastName: user.lastName,
             mobile: user.mobile,
-            transactionLimit:
-                user.transactionLimit === null ? "" : String(user.transactionLimit / 10),
         });
         setErrors({});
         setDialogOpen(true);
@@ -269,8 +267,6 @@ function UsersPage() {
             next.lastName = "نام خانوادگی باید حداقل ۲ کاراکتر باشد.";
         const mobile = normalizeMobile(form.mobile);
         if (!/^09\d{9}$/.test(mobile)) next.mobile = "شماره موبایل باید با ۰۹ شروع و ۱۱ رقم باشد.";
-        if (form.transactionLimit && Number(form.transactionLimit) > 900_000_000_000_000)
-            next.transactionLimit = "حد معامله واردشده بیش از مقدار مجاز است.";
         if (editingUser) {
             if (form.password && form.password.length < 8)
                 next.password = "رمز عبور باید حداقل ۸ کاراکتر باشد.";
@@ -298,9 +294,6 @@ function UsersPage() {
                 first_name: form.firstName.trim(),
                 last_name: form.lastName.trim(),
                 mobile: normalizeMobile(form.mobile),
-                transaction_limit: form.transactionLimit
-                    ? Number(form.transactionLimit) * 10
-                    : null,
             };
             const response = await apiRequest<ApiUser>(
                 editingUser ? `admin/users/${editingUser.id}` : "admin/users",
@@ -364,7 +357,6 @@ function UsersPage() {
                     role: "role",
                     role_id: "role",
                     is_active: "active",
-                    transaction_limit: "transactionLimit",
                 };
                 for (const [field, messages] of Object.entries(error.errors)) {
                     const formField = fieldMap[field];
@@ -374,6 +366,74 @@ function UsersPage() {
             setErrors(nextErrors);
         } finally {
             setSubmitting(false);
+        }
+    }
+
+    function openTransactionLimitDialog(user: AdminUser) {
+        setLimitUser(user);
+        setTransactionLimit(
+            user.purchaseLimits.grams.limit === null ? "" : String(user.purchaseLimits.grams.limit),
+        );
+        setCountLimit(
+            user.purchaseLimits.count.limit === null ? "" : String(user.purchaseLimits.count.limit),
+        );
+        setTransactionLimitError("");
+    }
+
+    function closeTransactionLimitDialog() {
+        if (limitSubmitting) return;
+        setLimitUser(null);
+        setTransactionLimitError("");
+    }
+
+    async function submitTransactionLimit(event: React.FormEvent) {
+        event.preventDefault();
+        if (!limitUser) return;
+
+        if (
+            (transactionLimit &&
+                (!/^\d+(\.\d{1,6})?$/.test(transactionLimit) ||
+                    Number(transactionLimit) > 999_999_999_999)) ||
+            (countLimit && (!/^\d+$/.test(countLimit) || Number(countLimit) > 1_000_000_000))
+        ) {
+            setTransactionLimitError(
+                "وزن باید عدد معتبر با حداکثر ۶ رقم اعشار و تعداد باید عدد صحیح باشد.",
+            );
+            return;
+        }
+
+        setLimitSubmitting(true);
+        setTransactionLimitError("");
+        try {
+            const response = await apiRequest<ApiUser>(`admin/users/${limitUser.id}`, {
+                method: "PATCH",
+                body: JSON.stringify({
+                    first_name: limitUser.firstName,
+                    last_name: limitUser.lastName,
+                    mobile: limitUser.mobile,
+                    purchase_limit_grams: transactionLimit || null,
+                    purchase_limit_count: countLimit ? Number(countLimit) : null,
+                }),
+            });
+            const updatedUser = mapUser(response.data);
+            setUsers((current) =>
+                current.map((user) => (user.id === updatedUser.id ? updatedUser : user)),
+            );
+            toast.success(`حد معامله «${fullName(updatedUser)}» ذخیره شد.`);
+            setLimitUser(null);
+        } catch (error) {
+            if (
+                error instanceof ApiError &&
+                (error.errors?.purchase_limit_grams?.[0] || error.errors?.purchase_limit_count?.[0])
+            ) {
+                setTransactionLimitError(
+                    error.errors.purchase_limit_grams?.[0] ?? error.errors.purchase_limit_count![0],
+                );
+            } else {
+                setTransactionLimitError(apiErrorMessage(error, "ذخیره حد معامله ناموفق بود."));
+            }
+        } finally {
+            setLimitSubmitting(false);
         }
     }
 
@@ -488,6 +548,7 @@ function UsersPage() {
                     <UserList
                         users={filteredUsers}
                         onEdit={openEditDialog}
+                        onTransactionLimit={openTransactionLimitDialog}
                         onDelete={setDeleteTarget}
                     />
                 )}
@@ -580,33 +641,6 @@ function UsersPage() {
                                     aria-invalid={Boolean(errors.mobile)}
                                 />
                             </FormField>
-                            <FormField
-                                label="حد معامله (تومان)"
-                                htmlFor="user-transaction-limit"
-                                error={errors.transactionLimit}
-                            >
-                                <Input
-                                    id="user-transaction-limit"
-                                    inputMode="numeric"
-                                    dir="ltr"
-                                    value={formatTransactionLimitInput(form.transactionLimit)}
-                                    onChange={(event) =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            transactionLimit: normalizeTransactionLimit(
-                                                event.target.value,
-                                            ),
-                                        }))
-                                    }
-                                    placeholder="خالی = نامحدود"
-                                    className="text-left tabular-nums"
-                                    aria-invalid={Boolean(errors.transactionLimit)}
-                                />
-                                <p className="mt-1.5 text-[11px] text-muted-foreground">
-                                    خالی یعنی نامحدود؛ صفر یعنی عدم امکان ثبت معامله.
-                                </p>
-                            </FormField>
-                            {editingUser && <TransactionLimitSummary user={editingUser} />}
                             {!editingUser && (
                                 <FormField
                                     label="ایمیل (اختیاری)"
@@ -747,6 +781,101 @@ function UsersPage() {
                 </DialogContent>
             </Dialog>
 
+            <Dialog
+                open={Boolean(limitUser)}
+                onOpenChange={(open) => {
+                    if (!open) closeTransactionLimitDialog();
+                }}
+            >
+                <DialogContent dir="rtl" className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
+                    {limitUser && (
+                        <form onSubmit={submitTransactionLimit}>
+                            <DialogHeader>
+                                <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-gold-soft text-[color:var(--gold-dark)]">
+                                    <CircleDollarSign className="h-5 w-5" />
+                                </div>
+                                <DialogTitle>حد معامله</DialogTitle>
+                                <DialogDescription>
+                                    تعیین سقف مجموع خرید طلا و کالاهای تعدادی برای «
+                                    {fullName(limitUser)}»
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-4 py-5">
+                                <TransactionLimitSummary user={limitUser} />
+                                <FormField
+                                    label="حد خرید طلا (گرم)"
+                                    htmlFor="transaction-limit"
+                                    error={transactionLimitError}
+                                >
+                                    <Input
+                                        id="transaction-limit"
+                                        inputMode="decimal"
+                                        dir="ltr"
+                                        value={formatTransactionLimitInput(transactionLimit)}
+                                        onChange={(event) => {
+                                            setTransactionLimit(
+                                                normalizeTransactionLimit(event.target.value),
+                                            );
+                                            setTransactionLimitError("");
+                                        }}
+                                        placeholder="خالی = نامحدود"
+                                        className="text-left tabular-nums"
+                                        autoFocus
+                                        aria-invalid={Boolean(transactionLimitError)}
+                                    />
+                                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                        خالی یعنی نامحدود؛ صفر یعنی عدم امکان خرید طلا.
+                                    </p>
+                                </FormField>
+                                <FormField
+                                    label="حد خرید سکه و کالاهای تعدادی (عدد)"
+                                    htmlFor="purchase-count-limit"
+                                >
+                                    <Input
+                                        id="purchase-count-limit"
+                                        inputMode="numeric"
+                                        dir="ltr"
+                                        value={formatTransactionLimitInput(countLimit)}
+                                        onChange={(event) => {
+                                            setCountLimit(
+                                                normalizeTransactionLimit(event.target.value),
+                                            );
+                                            setTransactionLimitError("");
+                                        }}
+                                        placeholder="خالی = نامحدود"
+                                        className="text-left tabular-nums"
+                                    />
+                                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                        خالی یعنی نامحدود؛ صفر یعنی عدم امکان خرید کالاهای تعدادی.
+                                        خریدهای در انتظار، تأییدشده و تکمیل‌شده از سقف مصرف می‌کنند.
+                                    </p>
+                                </FormField>
+                            </div>
+
+                            <DialogFooter className="gap-2 sm:gap-0">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={closeTransactionLimitDialog}
+                                    disabled={limitSubmitting}
+                                >
+                                    انصراف
+                                </Button>
+                                <Button type="submit" disabled={limitSubmitting}>
+                                    {limitSubmitting ? (
+                                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Save className="me-2 h-4 w-4" />
+                                    )}
+                                    ذخیره حد معامله
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
+                </DialogContent>
+            </Dialog>
+
             <AlertDialog
                 open={Boolean(deleteTarget)}
                 onOpenChange={(open) => {
@@ -851,10 +980,12 @@ function OnlineUsers({ users }: { users: ReturnType<typeof useAdminOnlineUsers> 
 function UserList({
     users,
     onEdit,
+    onTransactionLimit,
     onDelete,
 }: {
     users: AdminUser[];
     onEdit: (user: AdminUser) => void;
+    onTransactionLimit: (user: AdminUser) => void;
     onDelete: (user: AdminUser) => void;
 }) {
     return (
@@ -900,7 +1031,12 @@ function UserList({
                                     {formatPersianDate(user.createdAt)}
                                 </td>
                                 <td className="p-3">
-                                    <UserActions user={user} onEdit={onEdit} onDelete={onDelete} />
+                                    <UserActions
+                                        user={user}
+                                        onEdit={onEdit}
+                                        onTransactionLimit={onTransactionLimit}
+                                        onDelete={onDelete}
+                                    />
                                 </td>
                             </tr>
                         ))}
@@ -924,7 +1060,13 @@ function UserList({
                                 عضویت {formatPersianDate(user.createdAt)}
                             </span>
                         </div>
-                        <UserActions user={user} onEdit={onEdit} onDelete={onDelete} mobile />
+                        <UserActions
+                            user={user}
+                            onEdit={onEdit}
+                            onTransactionLimit={onTransactionLimit}
+                            onDelete={onDelete}
+                            mobile
+                        />
                     </article>
                 ))}
             </div>
@@ -933,34 +1075,33 @@ function UserList({
 }
 
 function TransactionLimitCompact({ user }: { user: AdminUser }) {
-    if (user.transactionLimitUnlimited) {
-        return <span className="text-xs font-bold text-positive">نامحدود</span>;
-    }
-
     return (
         <div className="text-xs tabular-nums">
-            <div className="font-bold">{formatToman(user.transactionLimit ?? 0)}</div>
-            <div className="mt-0.5 text-[11px] text-muted-foreground">
-                مصرف {formatToman(user.transactionLimitUsed)}
-            </div>
+            {(["grams", "count"] as const).map((key) => (
+                <div key={key} className="mt-0.5">
+                    {key === "grams" ? "طلا: " : "تعدادی: "}
+                    {formatQuantityLimit(user.purchaseLimits[key].limit, key)}
+                </div>
+            ))}
         </div>
     );
 }
 
+function formatQuantityLimit(value: number | string | null, key: "grams" | "count") {
+    if (value === null) return "نامحدود";
+    return `${Number(value).toLocaleString("fa-IR", { maximumFractionDigits: 6 })} ${key === "grams" ? "گرم" : "عدد"}`;
+}
+
 function TransactionLimitSummary({ user }: { user: AdminUser }) {
-    const items = [
-        [
-            "حد معامله",
-            user.transactionLimitUnlimited ? "نامحدود" : formatToman(user.transactionLimit ?? 0),
-        ],
-        ["مصرف‌شده", formatToman(user.transactionLimitUsed)],
-        [
-            "باقی‌مانده",
-            user.transactionLimitUnlimited
-                ? "نامحدود"
-                : formatToman(user.transactionLimitRemaining ?? 0),
-        ],
-    ];
+    const items = (["grams", "count"] as const).flatMap((key) => {
+        const limit = user.purchaseLimits[key];
+        const title = key === "grams" ? "طلا" : "تعدادی";
+        return [
+            [`سقف ${title}`, formatQuantityLimit(limit.limit, key)],
+            [`مصرف ${title}`, formatQuantityLimit(limit.used, key)],
+            [`باقی‌مانده ${title}`, formatQuantityLimit(limit.remaining, key)],
+        ];
+    });
 
     return (
         <dl className="grid grid-cols-3 gap-2 sm:col-span-2">
@@ -980,11 +1121,13 @@ function TransactionLimitSummary({ user }: { user: AdminUser }) {
 function UserActions({
     user,
     onEdit,
+    onTransactionLimit,
     onDelete,
     mobile = false,
 }: {
     user: AdminUser;
     onEdit: (user: AdminUser) => void;
+    onTransactionLimit: (user: AdminUser) => void;
     onDelete: (user: AdminUser) => void;
     mobile?: boolean;
 }) {
@@ -1002,6 +1145,17 @@ function UserActions({
             >
                 <Pencil className="me-1.5 h-3.5 w-3.5" />
                 ویرایش
+            </Button>
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={mobile ? "flex-1" : "h-8 px-2.5"}
+                onClick={() => onTransactionLimit(user)}
+                aria-label={`حد معامله ${fullName(user)}`}
+            >
+                <CircleDollarSign className="me-1.5 h-3.5 w-3.5" />
+                حد معامله
             </Button>
             <Button
                 type="button"

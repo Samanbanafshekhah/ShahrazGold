@@ -83,6 +83,9 @@ printf '%s\n' \
     'فایل‌های .env، .htaccess، public_html/index.php، storage و cache داخل بسته نیستند و دست‌نخورده می‌مانند.' \
     '' \
     'بعد از استخراج:' \
+    'این آپدیت نیاز به migration دارد: 2026_10_05_000001_add_quantity_purchase_limits_to_users.' \
+    'اسکریپت deploy-cpanel.php مایگریشن‌های اجرا نشده را خودکار اجرا می‌کند؛ با Terminal نیز می‌توانید در shahrazgold-app دستور php artisan migrate --force را اجرا کنید.' \
+    'پس از آپدیت، حد خرید مشتریان را در پنل ادمین به گرم و تعداد تنظیم کنید؛ سقف‌های تومانی قبلی تبدیل نمی‌شوند و ورودی خالی یعنی نامحدود.' \
     '1) در shahrazgold-app/.env از CACHE_STORE=file، SESSION_DRIVER=file، QUEUE_CONNECTION=sync، BROADCAST_CONNECTION=log و SHAHRAZGOLD_PRESENCE_DRIVER=cache استفاده کنید.' \
     '2) در cPanel > Cron Jobs یک Cron موقت با اجرای Every Minute بسازید و CPANEL_USERNAME را عوض کنید:' \
     '   /home/CPANEL_USERNAME/shahrazgold-app/deploy-cpanel.php' \

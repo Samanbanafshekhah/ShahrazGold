@@ -30,7 +30,9 @@ class UserRequest extends FormRequest
                 'role' => ['prohibited'],
                 'role_id' => ['prohibited'],
                 'is_active' => ['prohibited'],
-                'transaction_limit' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:9000000000000000'],
+                'purchase_limit_grams' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999999999999', 'decimal:0,6'],
+                'purchase_limit_count' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:1000000000'],
+                'transaction_limit' => ['prohibited'],
             ];
         }
 
@@ -40,7 +42,9 @@ class UserRequest extends FormRequest
             'email' => ['nullable', 'email:rfc', 'max:255', Rule::unique('users')->ignore($id)],
             'password' => ['required', 'confirmed', Password::min(8)],
             'role' => ['required', Rule::enum(UserRole::class)], 'role_id' => ['nullable', 'integer', 'exists:roles,id'], 'is_active' => ['sometimes', 'boolean'],
-            'transaction_limit' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:9000000000000000'],
+            'purchase_limit_grams' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999999999999', 'decimal:0,6'],
+            'purchase_limit_count' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:1000000000'],
+            'transaction_limit' => ['prohibited'],
         ];
     }
 }

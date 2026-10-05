@@ -439,6 +439,9 @@ function BuyOrderPanel({ asset, onClose }: { asset: LivePriceAsset; onClose: () 
         () => ({
             id: asset.id,
             productId: asset.productId,
+            priceId: asset.priceId,
+            priceVersion: asset.priceVersion,
+            priceAdjustmentVersion: asset.priceAdjustmentVersion,
             symbol: asset.symbol ?? asset.id,
             title: asset.name,
             unit: asset.unit ?? unit,
@@ -472,6 +475,9 @@ function toLivePriceAsset(asset: GoldAsset): LivePriceAsset {
     return {
         id: String(asset.productId ?? asset.symbol),
         productId: asset.productId,
+        priceId: asset.priceId,
+        priceVersion: asset.priceVersion,
+        priceAdjustmentVersion: asset.priceAdjustmentVersion,
         name: asset.title,
         symbol: asset.symbol,
         category: asset.category,

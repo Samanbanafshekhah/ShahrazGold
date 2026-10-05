@@ -19,7 +19,7 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    protected $fillable = ['first_name', 'last_name', 'mobile', 'email', 'password', 'role', 'role_id', 'is_active', 'transaction_limit_rial', 'mobile_verified_at'];
+    protected $fillable = ['first_name', 'last_name', 'mobile', 'email', 'password', 'role', 'role_id', 'is_active', 'transaction_limit_rial', 'purchase_limit_grams', 'purchase_limit_count', 'mobile_verified_at'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -34,6 +34,8 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'is_active' => 'boolean',
             'transaction_limit_rial' => 'integer',
+            'purchase_limit_grams' => 'decimal:6',
+            'purchase_limit_count' => 'integer',
             'mobile_verified_at' => 'immutable_datetime',
             'last_login_at' => 'immutable_datetime',
             'password' => 'hashed',

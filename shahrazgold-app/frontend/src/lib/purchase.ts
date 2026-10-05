@@ -4,9 +4,35 @@ import { formatNumber, toPersianDigits } from "./formatters";
 export type PurchaseMode = "amount" | "quantity";
 export type TradeAction = "buy" | "sell";
 
+export function priceChangedMessage(action: TradeAction): string {
+    return `قیمت این محصول تغییر کرده است. لطفاً فرم را دوباره باز کنید و درخواست ${action === "buy" ? "خرید" : "فروش"} جدید ثبت کنید.`;
+}
+
+export class PurchasePriceChangedError extends Error {
+    constructor(action: TradeAction) {
+        super(priceChangedMessage(action));
+    }
+}
+
+export function purchasePriceChanged(initial: PurchaseProduct, current: PurchaseProduct): boolean {
+    return (
+        initial.priceId !== current.priceId ||
+        initial.priceVersion !== current.priceVersion ||
+        initial.priceAdjustmentVersion !== current.priceAdjustmentVersion ||
+        initial.unitPrice !== current.unitPrice ||
+        initial.amountDivisor !== current.amountDivisor ||
+        initial.finalAmountMultiplier !== current.finalAmountMultiplier ||
+        initial.priceUnit !== current.priceUnit ||
+        initial.unit !== current.unit
+    );
+}
+
 export interface PurchaseProduct {
     id: string;
     productId?: number;
+    priceId?: number;
+    priceVersion?: number;
+    priceAdjustmentVersion?: number;
     symbol: string;
     title: string;
     unit: string;
@@ -35,6 +61,9 @@ export function purchaseProductFromAsset(
     return {
         id: asset.symbol,
         productId: asset.productId,
+        priceId: asset.priceId,
+        priceVersion: asset.priceVersion,
+        priceAdjustmentVersion: asset.priceAdjustmentVersion,
         symbol: asset.symbol,
         title: asset.title,
         unit: asset.unit,

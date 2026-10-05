@@ -127,10 +127,7 @@ class UserController extends Controller
 
     private function normalizeUserData(UserRequest $request): array
     {
-        $data = $request->safe()->except(['password_confirmation', 'transaction_limit']);
-        if ($request->exists('transaction_limit')) {
-            $data['transaction_limit_rial'] = $request->input('transaction_limit');
-        }
+        $data = $request->safe()->except(['password_confirmation']);
 
         return $this->normalizeRole($data);
     }

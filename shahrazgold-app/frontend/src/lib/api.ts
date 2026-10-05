@@ -15,6 +15,7 @@ export class ApiError extends Error {
         readonly status: number,
         readonly errors?: Record<string, string[]> | null,
         readonly data?: unknown,
+        readonly code?: string,
     ) {
         super(message);
         this.name = "ApiError";
@@ -78,6 +79,7 @@ export async function apiRequest<T>(
             response.status,
             payload.errors,
             payload.data,
+            payload.message,
         );
     }
 

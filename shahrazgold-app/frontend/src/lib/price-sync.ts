@@ -63,7 +63,7 @@ function websocketOptions(token: string) {
         enabledTransports: ["ws", "wss"] as ("ws" | "wss")[],
         authEndpoint: import.meta.env.VITE_BROADCAST_AUTH_ENDPOINT ?? "/api/broadcasting/auth",
         auth: { headers: { Authorization: `Bearer ${token}` } },
-        client: Pusher,
+        Pusher,
     };
 }
 
