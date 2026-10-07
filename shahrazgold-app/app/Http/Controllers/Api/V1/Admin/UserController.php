@@ -65,7 +65,8 @@ class UserController extends Controller
             if ($locked->id === $request->user()->id && $deactivating) {
                 abort(409, 'You cannot deactivate yourself.');
             }
-            $roleChanged = isset($data['role']) && $data['role'] !== $locked->role->value;
+            $roleChanged = (isset($data['role']) && $data['role'] !== $locked->role->value)
+                || (isset($data['role_id']) && (int) $data['role_id'] !== $locked->role_id);
             $locked->update($data);
             if ($roleChanged || $deactivating) {
                 $locked->tokens()->delete();
@@ -128,6 +129,14 @@ class UserController extends Controller
     private function normalizeUserData(UserRequest $request): array
     {
         $data = $request->safe()->except(['password_confirmation']);
+
+        if (! $request->isMethod('post')) {
+            foreach (['role', 'role_id'] as $field) {
+                if (array_key_exists($field, $data) && $data[$field] === null) {
+                    unset($data[$field]);
+                }
+            }
+        }
 
         return $this->normalizeRole($data);
     }

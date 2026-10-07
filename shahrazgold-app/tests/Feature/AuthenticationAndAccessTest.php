@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory;
@@ -191,6 +192,61 @@ class AuthenticationAndAccessTest extends TestCase
         $updated = $user->fresh();
         $this->assertNotSame($password, $updated->password);
         $this->assertTrue(Hash::check('changed-password', $updated->password));
+    }
+
+    public function test_admin_can_optionally_change_user_role(): void
+    {
+        Sanctum::actingAs($this->admin());
+        $user = $this->customer();
+        $identity = $user->only(['first_name', 'last_name', 'mobile']);
+        $user->createToken('existing-session');
+
+        $this->patchJson('/api/v1/admin/users/'.$user->id, $identity + ['role' => 'admin'])
+            ->assertOk()->assertJsonPath('data.role', 'admin');
+        $this->assertSame(0, $user->tokens()->count());
+
+        $this->patchJson('/api/v1/admin/users/'.$user->id, $identity)
+            ->assertOk()->assertJsonPath('data.role', 'admin');
+        $this->patchJson('/api/v1/admin/users/'.$user->id, $identity + ['role' => null, 'role_id' => null])
+            ->assertOk()->assertJsonPath('data.role', 'admin');
+
+        $this->patchJson('/api/v1/admin/users/'.$user->id, $identity + ['role' => 'customer'])
+            ->assertOk()->assertJsonPath('data.role', 'customer');
+    }
+
+    public function test_admin_can_change_custom_role_and_preserve_it_when_omitted(): void
+    {
+        Sanctum::actingAs($this->admin());
+        $oldRole = Role::create(['name' => 'قدیمی', 'slug' => 'old-customer', 'is_active' => true]);
+        $newRole = Role::create(['name' => 'جدید', 'slug' => 'new-customer', 'is_active' => true]);
+        $user = $this->customer(['role_id' => $oldRole->id]);
+        $identity = $user->only(['first_name', 'last_name', 'mobile']);
+        $user->createToken('existing-session');
+
+        $this->patchJson('/api/v1/admin/users/'.$user->id, $identity + ['role_id' => $newRole->id])
+            ->assertOk()->assertJsonPath('data.role_id', $newRole->id)
+            ->assertJsonPath('data.role', 'customer');
+        $this->assertSame(0, $user->tokens()->count());
+        $user->createToken('new-session');
+
+        $this->patchJson('/api/v1/admin/users/'.$user->id, $identity + ['role' => null, 'role_id' => null])
+            ->assertOk()->assertJsonPath('data.role_id', $newRole->id);
+        $this->assertSame(1, $user->tokens()->count());
+    }
+
+    public function test_role_edits_validate_roles_and_protect_last_active_admin(): void
+    {
+        $admin = $this->admin();
+        Sanctum::actingAs($admin);
+        $identity = $admin->only(['first_name', 'last_name', 'mobile']);
+
+        $this->patchJson('/api/v1/admin/users/'.$admin->id, $identity + ['role' => 'unknown'])
+            ->assertUnprocessable()->assertJsonValidationErrors('role');
+        $this->patchJson('/api/v1/admin/users/'.$admin->id, $identity + ['role_id' => 999999])
+            ->assertUnprocessable()->assertJsonValidationErrors('role_id');
+        $this->patchJson('/api/v1/admin/users/'.$admin->id, $identity + ['role' => 'customer'])
+            ->assertStatus(409);
+        $this->assertSame(UserRole::Admin, $admin->fresh()->role);
     }
 
     public function test_admin_can_delete_another_user(): void

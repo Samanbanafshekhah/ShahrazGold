@@ -249,6 +249,7 @@ function UsersPage() {
             firstName: user.firstName,
             lastName: user.lastName,
             mobile: user.mobile,
+            role: "unchanged",
         });
         setErrors({});
         setDialogOpen(true);
@@ -303,6 +304,12 @@ function UsersPage() {
                         editingUser
                             ? {
                                   ...identity,
+                                  ...(form.role !== "unchanged"
+                                      ? {
+                                            role: form.role === "admin" ? "admin" : "customer",
+                                            role_id: roles.find((role) => role.slug === form.role)?.id,
+                                        }
+                                      : {}),
                                   ...(form.password
                                       ? {
                                             password: form.password,
@@ -579,7 +586,7 @@ function UsersPage() {
                             </DialogTitle>
                             <DialogDescription>
                                 {editingUser
-                                    ? "نام، شماره موبایل و در صورت نیاز رمز عبور کاربر را ویرایش کنید."
+                                    ? "نام، شماره موبایل و در صورت نیاز نقش یا رمز عبور کاربر را ویرایش کنید."
                                     : "اطلاعات هویتی و سطح دسترسی کاربر را وارد کنید."}
                             </DialogDescription>
                         </DialogHeader>
@@ -704,34 +711,40 @@ function UsersPage() {
                                     aria-invalid={Boolean(errors.passwordConfirmation)}
                                 />
                             </FormField>
-                            {!editingUser && (
-                                <FormField
-                                    label="نقش کاربر"
-                                    htmlFor="user-role"
-                                    error={errors.role}
+                            <FormField
+                                label={editingUser ? "نقش کاربر (اختیاری)" : "نقش کاربر"}
+                                htmlFor="user-role"
+                                error={errors.role}
+                            >
+                                <Select
+                                    value={form.role}
+                                    onValueChange={(role) =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            role,
+                                        }))
+                                    }
                                 >
-                                    <Select
-                                        value={form.role}
-                                        onValueChange={(role) =>
-                                            setForm((current) => ({
-                                                ...current,
-                                                role,
-                                            }))
-                                        }
+                                    <SelectTrigger
+                                        id="user-role"
+                                        aria-invalid={Boolean(errors.role)}
                                     >
-                                        <SelectTrigger id="user-role">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent dir="rtl">
-                                            {roles.map((role) => (
-                                                <SelectItem key={role.slug} value={role.slug}>
-                                                    {role.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormField>
-                            )}
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent dir="rtl">
+                                        {editingUser && (
+                                            <SelectItem value="unchanged">
+                                                بدون تغییر ({editingUser.roleName})
+                                            </SelectItem>
+                                        )}
+                                        {roles.map((role) => (
+                                            <SelectItem key={role.slug} value={role.slug}>
+                                                {role.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
                             {!editingUser && (
                                 <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
                                     <div>
