@@ -19,7 +19,7 @@ final class TradePriceCalculator
     {
         $raw = (string) $price->raw_price_rial;
         $normalAdjustment = $tradeType === TradeType::CustomerSell
-            ? (string) $product->sell_price_difference_rial
+            ? $product->sellDifferenceFor($price)
             : '0';
         $roleAdjustments = $user?->priceAdjustmentsFor($product->id) ?? ['buy' => '0', 'sell' => '0'];
         $roleAdjustment = $tradeType === TradeType::CustomerSell

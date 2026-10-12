@@ -14,6 +14,15 @@ return [
     |
     */
 
+    'homegold' => [
+        'base_url' => env('HOMEGOLD_BASE_URL', 'https://homegold750.ir'),
+        'client_id' => env('HOMEGOLD_CLIENT_ID'),
+        'client_secret' => env('HOMEGOLD_CLIENT_SECRET'),
+        'timeout' => (int) env('HOMEGOLD_TIMEOUT', 15),
+        'token_ttl' => (int) env('HOMEGOLD_TOKEN_TTL', 300),
+        'cache_store' => env('HOMEGOLD_CACHE_STORE', 'file'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

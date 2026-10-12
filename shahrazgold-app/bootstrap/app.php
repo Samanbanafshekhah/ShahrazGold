@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\HomeGoldException;
 use App\Exceptions\KavenegarException;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserIsAdmin;
@@ -29,6 +30,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (HomeGoldException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false, 'message' => preg_match('/[\x{0600}-\x{06FF}]/u', $e->getMessage())
+                    ? $e->getMessage() : 'ارتباط با هوم‌گلد ناموفق بود؛ تنظیمات اتصال را بررسی کنید.',
+                'data' => null, 'errors' => null,
+            ], 503);
+        });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );

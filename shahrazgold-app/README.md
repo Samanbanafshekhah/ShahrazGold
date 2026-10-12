@@ -2,6 +2,14 @@
 
 این دایرکتوری فرانت TanStack/Vite و بک‌اند Laravel را برای اجرا و انتشار روی یک دامنه ترکیب می‌کند.
 
+## راهنمای جامع فارسی
+
+راهنمای کامل استفاده، اتصال هوم‌گلد، توسعه، API، تست و استقرار با فونت وزیر:
+
+- [نسخهٔ PDF آمادهٔ چاپ](docs/PROJECT_GUIDE.fa.pdf)
+- [نسخهٔ HTML با فهرست فصل‌ها](docs/PROJECT_GUIDE.fa.html)
+- [نسخهٔ Markdown قابل ویرایش](docs/PROJECT_GUIDE.fa.md)
+
 ## ساختار
 
 - `app/`، `routes/`، `database/`: بک‌اند Laravel و APIهای `/api/v1`
@@ -63,6 +71,14 @@ KAVENEGAR_OTP_TEMPLATE=shahrazgoldverify
 بازیابی رمز عبور پیامکی از مسیرهای `POST /api/v1/auth/forgot-password`،
 `POST /api/v1/auth/forgot-password/resend` و `POST /api/v1/auth/reset-password` استفاده
 می‌کند. پس از تغییر رمز، تمام نشست‌های قبلی کاربر باطل می‌شوند.
+
+## API مالی هوم‌گلد
+
+پس از تنظیم `HOMEGOLD_CLIENT_ID` و `HOMEGOLD_CLIENT_SECRET` در `.env`، با
+`php artisan homegold:commodities` قیمت‌های فعلی را ببینید. برای استفاده در کد فقط
+`app(\App\Services\HomeGoldService::class)->commodities()` را فراخوانی کنید.
+برای اتصال محصولات و تست قیمت پیشنهادی، از منوی مدیریت «اتصال هوم‌گلد» (`/admin/homegold`) را باز کنید. پیش‌نمایش قیمت سایت را تغییر نمی‌دهد؛ اعمال قیمت با فعال کردن حالت خودکار انجام می‌شود.
+راهنمای کامل و تنظیم زمان‌بندی در [docs/HOMEGOLD_API.fa.md](docs/HOMEGOLD_API.fa.md) است.
 
 ## بررسی کیفیت
 

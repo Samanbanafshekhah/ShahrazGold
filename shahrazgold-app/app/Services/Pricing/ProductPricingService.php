@@ -80,6 +80,7 @@ final class ProductPricingService
             $locked = $lockedProducts->get($product->id);
             abort_unless($locked, 404);
 
+            abort_if($locked->homeGoldBinding?->mode === 'auto', 409, 'برای تغییر دستی قیمت، اتصال خودکار هوم‌گلد را غیرفعال کنید.');
             $previousPrice = $locked->currentPrice()->first();
             $effectiveAt = now()->utc();
             $price = $this->createPriceSnapshot(
@@ -95,7 +96,8 @@ final class ProductPricingService
                 ? bccomp($priceRial, (string) $previousPrice->raw_price_rial, 0)
                 : 0;
 
-            if ($product->id === self::LINKED_PRICE_SOURCE_PRODUCT_ID && $priceDirection !== 0) {
+            if ($product->id === self::LINKED_PRICE_SOURCE_PRODUCT_ID && $priceDirection !== 0
+                && $lockedProducts->get(self::LINKED_PRICE_TARGET_PRODUCT_ID)?->homeGoldBinding?->mode !== 'auto') {
                 $linkedProduct = $lockedProducts->get(self::LINKED_PRICE_TARGET_PRODUCT_ID);
                 abort_unless($linkedProduct, 409, 'Linked product 1 was not found.');
 
@@ -136,12 +138,17 @@ final class ProductPricingService
         string $source,
         ?ProductPrice $previousPrice = null,
     ): ProductPrice {
+        $parameters = $previousPrice?->formula_parameters;
+        if ($previousPrice?->formula_key === 'homegold_external' && $parameters !== null) {
+            $parameters['sell_price_rial'] = DecimalMath::sub($priceRial, $product->sellDifferenceFor($previousPrice), 0);
+            abort_if(bccomp($parameters['sell_price_rial'], '0', 0) <= 0, 409, 'SELL_PRICE_UNAVAILABLE');
+        }
         $price = $product->prices()->create([
             'market_price_quote_id' => $previousPrice?->market_price_quote_id,
             'raw_price_rial' => $priceRial,
             'pricing_mode' => $pricingMode,
             'formula_key' => $previousPrice?->formula_key,
-            'formula_parameters' => $previousPrice?->formula_parameters,
+            'formula_parameters' => $parameters,
             'created_by' => $actorId,
             'effective_at' => $effectiveAt,
         ]);

@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
     LayoutDashboard,
     Coins,
+    PlugZap,
     FolderTree,
     ShoppingBag,
     Megaphone,
@@ -16,6 +17,7 @@ import { Brand } from "@/components/brand";
 type NavItem = {
     to:
         | "/admin"
+        | "/admin/homegold"
         | "/admin/prices"
         | "/admin/categories"
         | "/admin/requests"
@@ -31,6 +33,7 @@ type NavItem = {
 const NAV: NavItem[] = [
     { to: "/admin", label: "داشبورد", icon: LayoutDashboard, exact: true },
     { to: "/admin/prices", label: "مدیریت قیمت‌ها", icon: Coins },
+    { to: "/admin/homegold", label: "اتصال هوم‌گلد", icon: PlugZap },
     { to: "/admin/categories", label: "مدیریت دسته‌بندی‌ها", icon: FolderTree },
     { to: "/admin/requests", label: "درخواست‌های خرید و فروش", icon: ShoppingBag },
     { to: "/admin/users", label: "مدیریت کاربران", icon: Users },

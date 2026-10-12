@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PricingMode;
 use App\Enums\ProductUnit;
+use App\Services\Pricing\DecimalMath;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,6 +40,23 @@ class Product extends Model
             'price_step_rial' => 'integer',
             'price_version' => 'integer',
         ];
+    }
+
+    public function homeGoldBinding(): HasOne
+    {
+        return $this->hasOne(HomeGoldBinding::class);
+    }
+
+    public function sellDifferenceFor(?ProductPrice $price = null): string
+    {
+        $price ??= $this->currentPrice;
+        if ($price?->formula_key === 'homegold_external' && isset($price->formula_parameters['sell_price_rial'])) {
+            return DecimalMath::sub(
+                (string) $price->raw_price_rial, (string) $price->formula_parameters['sell_price_rial'], 0,
+            );
+        }
+
+        return (string) $this->sell_price_difference_rial;
     }
 
     public function category(): BelongsTo

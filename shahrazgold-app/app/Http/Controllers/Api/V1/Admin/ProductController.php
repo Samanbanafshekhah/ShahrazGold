@@ -86,6 +86,7 @@ class ProductController extends Controller
     {
         $data = $this->payload($request);
         $this->assertFormulaSource($data, $registry);
+        abort_if($product->homeGoldBinding?->mode === 'auto' && $data['pricing_mode'] !== PricingMode::Manual->value, 409, 'ابتدا اتصال خودکار هوم‌گلد را غیرفعال کنید.');
         $old = $product->toArray();
         $product->update($data);
         $pricePresentationChanged = $product->wasChanged('sell_price_difference_rial');
@@ -103,6 +104,7 @@ class ProductController extends Controller
 
     public function updatePriceStep(PriceStepRequest $request, Product $product, AuditService $audit): JsonResponse
     {
+        abort_if($product->homeGoldBinding?->mode === 'auto', 409, 'ابتدا اتصال خودکار هوم‌گلد را غیرفعال کنید.');
         $old = $product->toArray();
         $product->update($request->validated());
         $audit->record('product.price_step_updated', $product, $old, $product->fresh()->toArray());

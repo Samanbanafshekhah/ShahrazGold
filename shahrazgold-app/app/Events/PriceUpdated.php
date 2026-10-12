@@ -61,7 +61,7 @@ class PriceUpdated implements ShouldBroadcastNow, ShouldDispatchAfterCommit
                 ? null
                 : (int) $product->roles()->whereKey($this->onlyRoleId)->value('role_product_permissions.price_version'),
             'raw_price_rial' => (string) $this->productPrice->raw_price_rial,
-            'sell_price_difference_rial' => (string) $product->sell_price_difference_rial,
+            'sell_price_difference_rial' => $product->sellDifferenceFor($this->productPrice),
             'buy_price_rial' => $this->roleBuyPriceRial,
             'sell_price_rial' => $this->roleSellPriceRial,
             'effective_at' => $this->productPrice->effective_at->utc()->toISOString(),

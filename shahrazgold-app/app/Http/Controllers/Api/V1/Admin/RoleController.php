@@ -60,7 +60,7 @@ class RoleController extends Controller
                 $product = $products->get($adjustment['product_id']);
                 if ($product?->currentPrice) {
                     $raw = (string) $product->currentPrice->raw_price_rial;
-                    $normalSell = DecimalMath::sub($raw, (string) $product->sell_price_difference_rial, 0);
+                    $normalSell = DecimalMath::sub($raw, $product->sellDifferenceFor(), 0);
                     $buy = DecimalMath::add($raw, (string) $adjustment['buy_price_adjustment_rial'], 0);
                     $sell = DecimalMath::add($normalSell, (string) $adjustment['sell_price_adjustment_rial'], 0);
                     if (bccomp($buy, '0', 0) <= 0 || bccomp($sell, '0', 0) <= 0) {
@@ -131,7 +131,7 @@ class RoleController extends Controller
             'products' => Product::with('currentPrice')->orderBy('display_order')->orderBy('id')->get()->map(function (Product $product) use ($pivots) {
                 $pivot = $pivots->get($product->id)?->pivot;
                 $raw = $product->currentPrice ? (string) $product->currentPrice->raw_price_rial : null;
-                $normalSell = $raw ? DecimalMath::sub($raw, (string) $product->sell_price_difference_rial, 0) : null;
+                $normalSell = $raw ? DecimalMath::sub($raw, $product->sellDifferenceFor(), 0) : null;
                 $buyAdjustment = (string) ($pivot?->buy_price_adjustment_rial ?? 0);
                 $sellAdjustment = (string) ($pivot?->sell_price_adjustment_rial ?? 0);
 

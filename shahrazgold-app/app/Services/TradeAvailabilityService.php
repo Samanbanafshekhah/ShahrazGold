@@ -9,6 +9,10 @@ final class TradeAvailabilityService
 {
     public function closedMessage(Product $product, TradeType $tradeType): ?string
     {
+        if ($product->exists && $product->homeGoldBinding?->isStale()) {
+            return 'قیمت این محصول به‌روز نیست؛ ثبت سفارش تا دریافت قیمت جدید متوقف است.';
+        }
+
         return match ($tradeType) {
             TradeType::CustomerBuy => $product->buy_disabled
                 ? 'خرید این محصول در حال حاضر بسته است.'

@@ -65,12 +65,12 @@ class CatalogController extends Controller
                     'raw_price_rial' => $resource['current_price']['raw_price_rial'] ?? null,
                     'buy_price_rial' => $resource['current_price']['buy_price_rial'] ?? null,
                     'sell_price_rial' => $resource['current_price']['sell_price_rial'] ?? null,
-                    'sell_price_difference_rial' => (string) $product->sell_price_difference_rial,
-                    'buy_disabled' => (bool) $product->buy_disabled,
-                    'sell_disabled' => (bool) $product->sell_disabled,
+                    'sell_price_difference_rial' => $resource['sell_price_difference_rial'],
+                    'buy_disabled' => $resource['buy_disabled'],
+                    'sell_disabled' => $resource['sell_disabled'],
                     'price_version' => $resource['price_version'],
                     'price_adjustment_version' => $resource['price_adjustment_version'],
-                    'is_price_available' => (bool) $product->currentPrice,
+                    'is_price_available' => $resource['is_price_available'],
                     'effective_at' => $product->currentPrice?->effective_at->utc()->toIso8601String(),
                 ];
             }))
@@ -136,7 +136,7 @@ class CatalogController extends Controller
 
     private function visibleProducts(Request $request)
     {
-        $query = Product::with(['category', 'currentPrice'])->where('is_active', true)->whereHas('category', fn ($x) => $x->where('is_active', true));
+        $query = Product::with(['category', 'currentPrice', 'homeGoldBinding'])->where('is_active', true)->whereHas('category', fn ($x) => $x->where('is_active', true));
         $user = $request->user();
 
         if ($user && ! $user->isAdmin()) {

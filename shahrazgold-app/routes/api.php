@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Admin\AnnouncementController as AdminAnnouncemen
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\HomeGoldController;
 use App\Http\Controllers\Api\V1\Admin\MarketPriceSourceController;
 use App\Http\Controllers\Api\V1\Admin\PresenceController as AdminPresenceController;
 use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
@@ -57,6 +58,11 @@ Route::prefix('v1')->group(function () {
         Route::post('presence/heartbeat', [PresenceController::class, 'heartbeat'])->middleware('throttle:presence');
 
         Route::prefix('admin')->middleware('admin')->group(function () {
+            Route::get('homegold', [HomeGoldController::class, 'index']);
+            Route::post('homegold/refresh', [HomeGoldController::class, 'refresh'])->middleware('throttle:10,1');
+            Route::post('homegold/products/{product}/preview', [HomeGoldController::class, 'preview']);
+            Route::put('homegold/products/{product}', [HomeGoldController::class, 'update']);
+            Route::post('homegold/products/{product}/apply', [HomeGoldController::class, 'apply'])->middleware('throttle:10,1');
             Route::get('roles/{role}/price-adjustments', [RoleController::class, 'priceAdjustments']);
             Route::put('roles/{role}/price-adjustments', [RoleController::class, 'updatePriceAdjustments']);
             Route::apiResource('users', UserController::class);

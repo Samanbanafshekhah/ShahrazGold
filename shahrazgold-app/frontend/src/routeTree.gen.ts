@@ -31,6 +31,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminRolesRouteImport } from './routes/admin.roles'
 import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
 import { Route as AdminPricesRouteImport } from './routes/admin.prices'
+import { Route as AdminHomegoldRouteImport } from './routes/admin.homegold'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminAnnouncementRouteImport } from './routes/admin.announcement'
 
@@ -144,6 +145,11 @@ const AdminPricesRoute = AdminPricesRouteImport.update({
   path: '/prices',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHomegoldRoute = AdminHomegoldRouteImport.update({
+  id: '/homegold',
+  path: '/homegold',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/verify-otp': typeof VerifyOtpRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/homegold': typeof AdminHomegoldRoute
   '/admin/prices': typeof AdminPricesRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/roles': typeof AdminRolesRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/verify-otp': typeof VerifyOtpRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/homegold': typeof AdminHomegoldRoute
   '/admin/prices': typeof AdminPricesRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/roles': typeof AdminRolesRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/verify-otp': typeof VerifyOtpRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/homegold': typeof AdminHomegoldRoute
   '/admin/prices': typeof AdminPricesRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/roles': typeof AdminRolesRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/verify-otp'
     | '/admin/announcement'
     | '/admin/categories'
+    | '/admin/homegold'
     | '/admin/prices'
     | '/admin/requests'
     | '/admin/roles'
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/verify-otp'
     | '/admin/announcement'
     | '/admin/categories'
+    | '/admin/homegold'
     | '/admin/prices'
     | '/admin/requests'
     | '/admin/roles'
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/verify-otp'
     | '/admin/announcement'
     | '/admin/categories'
+    | '/admin/homegold'
     | '/admin/prices'
     | '/admin/requests'
     | '/admin/roles'
@@ -486,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPricesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/homegold': {
+      id: '/admin/homegold'
+      path: '/homegold'
+      fullPath: '/admin/homegold'
+      preLoaderRoute: typeof AdminHomegoldRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/categories': {
       id: '/admin/categories'
       path: '/categories'
@@ -506,6 +525,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAnnouncementRoute: typeof AdminAnnouncementRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminHomegoldRoute: typeof AdminHomegoldRoute
   AdminPricesRoute: typeof AdminPricesRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
   AdminRolesRoute: typeof AdminRolesRoute
@@ -519,6 +539,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementRoute: AdminAnnouncementRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminHomegoldRoute: AdminHomegoldRoute,
   AdminPricesRoute: AdminPricesRoute,
   AdminRequestsRoute: AdminRequestsRoute,
   AdminRolesRoute: AdminRolesRoute,
