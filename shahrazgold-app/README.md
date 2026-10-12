@@ -4,6 +4,8 @@
 
 ## راهنمای جامع فارسی
 
+برای توضیح سادهٔ اتصال API هوم‌گلد، انتخاب محصول متناظر و ارتباط محصولات، [راهنمای سادهٔ هوم‌گلد (PDF)](docs/HOMEGOLD_SIMPLE_GUIDE.fa.pdf) را بخوانید. [نسخهٔ HTML](docs/HOMEGOLD_SIMPLE_GUIDE.fa.html) و [متن قابل ویرایش](docs/HOMEGOLD_SIMPLE_GUIDE.fa.md) نیز موجود است.
+
 راهنمای کامل استفاده، اتصال هوم‌گلد، توسعه، API، تست و استقرار با فونت وزیر:
 
 - [نسخهٔ PDF آمادهٔ چاپ](docs/PROJECT_GUIDE.fa.pdf)
