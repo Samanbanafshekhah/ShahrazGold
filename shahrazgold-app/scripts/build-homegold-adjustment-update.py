@@ -6,9 +6,11 @@ Uses only the Python standard library and preserves all existing host settings.
 """
 
 import argparse
+from datetime import datetime
 import hashlib
 import json
 import re
+import stat
 import subprocess
 import zipfile
 from pathlib import Path
@@ -21,6 +23,14 @@ PHP_FILES = [
     "app/Models/HomeGoldBinding.php",
     "app/Services/HomeGoldPricingService.php",
 ]
+
+
+def write_host_file(archive, name, data):
+    info = zipfile.ZipInfo(name, date_time=datetime.now().timetuple()[:6])
+    info.create_system = 3
+    info.external_attr = (stat.S_IFREG | 0o644) << 16
+    info.compress_type = zipfile.ZIP_DEFLATED
+    archive.writestr(info, data, compresslevel=9)
 
 
 def main():
@@ -107,18 +117,21 @@ public_html/index.php، vendor، storage، فایل‌های آپلودشده و
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(args.output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in sorted(files.items()):
-            archive.writestr(name, data)
-        archive.writestr("README-UPDATE.fa.txt", readme)
-        archive.writestr("FILES.txt", "\n".join(sorted(files)) + "\n")
-        archive.writestr("UPDATE-MANIFEST.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+            write_host_file(archive, name, data)
+        write_host_file(archive, "README-UPDATE.fa.txt", readme)
+        write_host_file(archive, "FILES.txt", "\n".join(sorted(files)) + "\n")
+        write_host_file(archive, "UPDATE-MANIFEST.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     with zipfile.ZipFile(args.output) as archive:
         if archive.testzip() is not None:
             raise SystemExit("ZIP integrity check failed.")
         for name, data in files.items():
             if archive.read(name) != data:
                 raise SystemExit(f"ZIP content mismatch: {name}")
+        for info in archive.infolist():
+            if stat.S_IMODE(info.external_attr >> 16) != 0o644:
+                raise SystemExit(f"Incorrect file permissions: {info.filename}")
     print(f"Created {args.output.name}: {len(PHP_FILES)} PHP files, {len(files) - len(PHP_FILES) - 1} changed frontend assets, index.html")
-    print(f"Omitted {unchanged} unchanged assets; ZIP verified; {args.output.stat().st_size:,} bytes")
+    print(f"Omitted {unchanged} unchanged assets; ZIP and 0644 permissions verified; {args.output.stat().st_size:,} bytes")
 
 
 if __name__ == "__main__":
