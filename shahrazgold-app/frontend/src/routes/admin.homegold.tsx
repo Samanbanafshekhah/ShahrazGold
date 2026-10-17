@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AdminPage } from "@/components/admin/admin-page";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { apiErrorMessage, apiRequest } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/homegold")({
@@ -23,6 +24,8 @@ type Settings = {
     commodity_id: string;
     mode: "disabled" | "auto";
     currency_multiplier: string;
+    buy_offset_rial: string;
+    sell_offset_rial: string;
 };
 type Binding = Settings & {
     last_success_at: string | null;
@@ -50,6 +53,8 @@ const emptySettings: Settings = {
     commodity_id: "",
     mode: "disabled",
     currency_multiplier: "",
+    buy_offset_rial: "0",
+    sell_offset_rial: "0",
 };
 function settingsFor(product: Product): Settings {
     if (!product.binding) return { ...emptySettings };
@@ -57,6 +62,8 @@ function settingsFor(product: Product): Settings {
         commodity_id: product.binding.commodity_id,
         mode: product.binding.mode === "auto" ? "auto" : "disabled",
         currency_multiplier: String(product.binding.currency_multiplier),
+        buy_offset_rial: String(product.binding.buy_offset_rial ?? "0"),
+        sell_offset_rial: String(product.binding.sell_offset_rial ?? "0"),
     };
 }
 const money = (value: string | number | null | undefined) =>
@@ -68,6 +75,134 @@ const modeLabel = (value?: string) => (value === "auto" ? "خودکار" : "دس
 const selectClass =
     "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm transition focus:border-[color:var(--gold-dark)] focus:outline-none focus:ring-2 focus:ring-[color:var(--gold-dark)]/15 disabled:opacity-60";
 
+function PriceAdjustment({
+    side,
+    value,
+    sourceRial,
+    disabled,
+    onChange,
+}: {
+    side: "buy" | "sell";
+    value: string;
+    sourceRial: number | null;
+    disabled: boolean;
+    onChange: (value: string) => void;
+}) {
+    const [amount, setAmount] = useState(String(Math.abs(Number(value)) / 10));
+    const [direction, setDirection] = useState(Number(value) < 0 ? "decrease" : "increase");
+    const fieldId = `hg-${side}-offset`;
+    const isBuy = side === "buy";
+    const formattedAmount = amount.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const finalRial = sourceRial === null ? null : sourceRial + Number(value);
+    const toman = (rial: number | null) =>
+        rial === null ? "—" : `${(rial / 10).toLocaleString("fa-IR")} تومان`;
+
+    function update(nextAmount: string, nextDirection: string) {
+        const [whole, fraction = ""] = nextAmount.split(".");
+        const rial = BigInt(whole || "0") * 10n + BigInt(fraction || "0");
+        setAmount(nextAmount);
+        setDirection(nextDirection);
+        onChange(String(nextDirection === "decrease" ? -rial : rial));
+    }
+
+    return (
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-background">
+            <div
+                className={`border-b px-4 py-3 ${isBuy ? "border-emerald-500/15 bg-emerald-500/5" : "border-[color:var(--gold-dark)]/15 bg-gold-soft/60"}`}
+            >
+                <h3 className="text-sm font-extrabold">
+                    {isBuy ? "خرید مشتری از شهرازگلد" : "فروش مشتری به شهرازگلد"}
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                    {isBuy ? "تغییر قیمت خرید نسبت به هوم‌گلد" : "تغییر قیمت فروش نسبت به هوم‌گلد"}
+                </p>
+            </div>
+            <div className="space-y-3 p-4">
+                <div
+                    className="grid grid-cols-2 gap-1 rounded-xl bg-muted/70 p-1"
+                    role="group"
+                    aria-label={`روش تغییر قیمت ${isBuy ? "خرید" : "فروش"}`}
+                >
+                    {[
+                        { value: "increase", label: "+ افزایش قیمت" },
+                        { value: "decrease", label: "− کاهش قیمت" },
+                    ].map((option) => (
+                        <button
+                            key={option.value}
+                            type="button"
+                            disabled={disabled}
+                            aria-pressed={direction === option.value}
+                            onClick={() => update(amount, option.value)}
+                            className={`rounded-lg px-2 py-2 text-xs font-bold transition disabled:opacity-50 ${direction === option.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={fieldId}>
+                        مبلغ {direction === "increase" ? "افزایش" : "کاهش"}
+                    </Label>
+                    <div className="relative">
+                        <Input
+                            id={fieldId}
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
+                            autoComplete="off"
+                            maxLength={20}
+                            value={formattedAmount}
+                            disabled={disabled}
+                            placeholder="10,000,000"
+                            aria-describedby={`${fieldId}-hint`}
+                            className="h-12 rounded-xl pl-16 text-left text-lg font-bold tabular-nums"
+                            onChange={(event) => {
+                                const normalized = event.target.value
+                                    .replace(/[۰-۹]/g, (digit) =>
+                                        String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)),
+                                    )
+                                    .replace(/[٠-٩]/g, (digit) =>
+                                        String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)),
+                                    )
+                                    .replace(/[,٬\s]/g, "")
+                                    .replace(/٫/g, ".");
+                                if (/^\d*(?:\.\d?)?$/.test(normalized))
+                                    update(normalized, direction);
+                            }}
+                        />
+                        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-muted-foreground">
+                            تومان
+                        </span>
+                    </div>
+                    <p
+                        id={`${fieldId}-hint`}
+                        className="text-[11px] leading-5 text-muted-foreground"
+                    >
+                        مثلاً ۱۰٬۰۰۰٬۰۰۰ برای ده میلیون تومان؛ صفر یعنی بدون تغییر.
+                    </p>
+                </div>
+                <div className="space-y-2 rounded-xl bg-muted/40 p-3 text-xs">
+                    <div className="flex flex-wrap justify-between gap-1 text-muted-foreground">
+                        <span>قیمت هوم‌گلد پس از تبدیل پول</span>
+                        <span className="tabular-nums">{toman(sourceRial)}</span>
+                    </div>
+                    <div className="flex flex-wrap justify-between gap-1 border-t border-border/70 pt-2 font-bold">
+                        <span>قیمت پایه با تغییر شما</span>
+                        <span
+                            className={`tabular-nums ${finalRial !== null && finalRial <= 0 ? "text-destructive" : ""}`}
+                        >
+                            {toman(finalRial)}
+                        </span>
+                    </div>
+                    {finalRial !== null && finalRial <= 0 && (
+                        <p className="text-destructive">قیمت نهایی باید بیشتر از صفر باشد.</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function HomeGoldPage() {
     const [data, setData] = useState<PanelData | null>(null);
     const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -77,6 +212,7 @@ function HomeGoldPage() {
     const [error, setError] = useState("");
     const selected = data?.products.find((product) => product.id === selectedId);
     const commodities = data?.feed?.commodities ?? [];
+    const draftQuote = commodities.find((item) => item.CommodityId === draft.commodity_id);
     const visibleCommodities = [...commodities].sort(
         (a, b) =>
             Number(b.CommodityId === draft.commodity_id) -
@@ -491,9 +627,42 @@ function HomeGoldPage() {
                                             </select>
                                         </div>
                                     </div>
+                                    <div className="space-y-3">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <h3 className="text-sm font-extrabold">
+                                                تنظیم قیمت خرید و فروش
+                                            </h3>
+                                            <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
+                                                ورودی مبلغ به تومان
+                                            </span>
+                                        </div>
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                            {(["buy", "sell"] as const).map((side) => (
+                                                <PriceAdjustment
+                                                    key={`${selected.id}-${side}`}
+                                                    side={side}
+                                                    value={draft[`${side}_offset_rial`]}
+                                                    sourceRial={
+                                                        draftQuote && draft.currency_multiplier
+                                                            ? draftQuote[
+                                                                  side === "buy"
+                                                                      ? "buyPrice"
+                                                                      : "sellPrice"
+                                                              ] * Number(draft.currency_multiplier)
+                                                            : null
+                                                    }
+                                                    disabled={disabled}
+                                                    onChange={(value) =>
+                                                        change(`${side}_offset_rial`, value)
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
                                     <p className="text-xs text-muted-foreground">
-                                        قیمت هوم‌گلد با تبدیل واحد پول استفاده می‌شود. تعدیل نقش
-                                        کاربران جداگانه اعمال می‌شود.
+                                        مبلغ افزایش یا کاهش روی هر قیمت تازهٔ هوم‌گلد اعمال می‌شود؛
+                                        برای ثبت آن «ذخیره تنظیمات» را بزنید. قیمت‌های بالا برآورد
+                                        پایه‌اند؛ تعدیل نقش کاربران جداگانه اعمال می‌شود.
                                     </p>
                                     {selected.pricing_mode !== "manual" && (
                                         <p className="text-sm text-muted-foreground">

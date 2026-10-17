@@ -30,7 +30,7 @@ class HomeGoldPricingService
 
     public function preview(array $settings, array $feed): array
     {
-        $settings = array_replace($settings, HomeGoldBinding::FIXED_SETTINGS);
+        $settings = array_replace(HomeGoldBinding::DEFAULT_OFFSETS, $settings, HomeGoldBinding::FIXED_SETTINGS);
         $quote = collect($feed['commodities'])->firstWhere('CommodityId', $settings['commodity_id']);
         if (! $quote) {
             throw new HomeGoldException('محصول انتخاب‌شده در پاسخ هوم‌گلد وجود ندارد.');

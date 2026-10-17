@@ -14,10 +14,11 @@ class HomeGoldBinding extends Model
     public const FIXED_SETTINGS = [
         'buy_field' => 'buyPrice', 'sell_field' => 'sellPrice',
         'unit_divisor' => '1', 'buy_percent' => '0', 'sell_percent' => '0',
-        'buy_offset_rial' => '0', 'sell_offset_rial' => '0',
         'interval_seconds' => self::INTERVAL_SECONDS,
         'stale_after_seconds' => self::STALE_AFTER_SECONDS,
     ];
+
+    public const DEFAULT_OFFSETS = ['buy_offset_rial' => '0', 'sell_offset_rial' => '0'];
 
     protected $guarded = ['id'];
 

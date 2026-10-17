@@ -10,7 +10,11 @@ class HomeGoldBindingRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
-        $this->merge(HomeGoldBinding::FIXED_SETTINGS);
+        $this->merge(array_replace(
+            HomeGoldBinding::DEFAULT_OFFSETS,
+            $this->only(array_keys(HomeGoldBinding::DEFAULT_OFFSETS)),
+            HomeGoldBinding::FIXED_SETTINGS,
+        ));
     }
 
     public function authorize(): bool

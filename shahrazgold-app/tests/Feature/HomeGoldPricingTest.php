@@ -211,8 +211,8 @@ class HomeGoldPricingTest extends TestCase
         ]);
         app(HomeGoldPricingService::class)->refresh();
         $price = $product->fresh()->currentPrice;
-        $this->assertSame('10000', $price->raw_price_rial);
-        $this->assertSame('9000', $price->formula_parameters['sell_price_rial']);
+        $this->assertSame('10100', $price->raw_price_rial);
+        $this->assertSame('8900', $price->formula_parameters['sell_price_rial']);
         $this->assertSame('1', $price->formula_parameters['settings']['unit_divisor']);
         $this->travel(179)->seconds();
         $this->assertFalse($binding->fresh()->isStale());
@@ -229,6 +229,60 @@ class HomeGoldPricingTest extends TestCase
             ->assertJsonPath('data.products.0.binding.mode', 'disabled');
         $this->assertSame([], app(HomeGoldPricingService::class)->refresh(dueOnly: true));
         Http::assertNothingSent();
+        $this->assertDatabaseCount('product_prices', 0);
+    }
+
+    public function test_independent_offsets_are_saved_previewed_and_applied_to_every_fresh_quote(): void
+    {
+        $this->freezeTime();
+        $product = $this->product(['id' => 10]);
+        Sanctum::actingAs($this->admin());
+        $this->fakeFeed(buy: 80000000, sell: 79000000);
+        $settings = array_merge($this->settings, [
+            'mode' => 'auto', 'buy_offset_rial' => '100000000', 'sell_offset_rial' => '-100000000',
+        ]);
+        $url = '/api/v1/admin/homegold/products/'.$product->id;
+        $this->postJson($url.'/preview', $settings)->assertOk()
+            ->assertJsonPath('data.buy_price_rial', '900000000')
+            ->assertJsonPath('data.sell_price_rial', '690000000');
+        $this->assertDatabaseCount('product_prices', 0);
+        $this->putJson($url, $settings)->assertOk()
+            ->assertJsonPath('data.buy_offset_rial', '100000000')
+            ->assertJsonPath('data.sell_offset_rial', '-100000000');
+        $this->getJson('/api/v1/admin/homegold')->assertOk()
+            ->assertJsonPath('data.products.0.binding.buy_offset_rial', '100000000')
+            ->assertJsonPath('data.products.0.binding.sell_offset_rial', '-100000000');
+        app(HomeGoldPricingService::class)->refresh(dueOnly: true);
+        $price = $product->fresh()->currentPrice;
+        $this->assertSame('900000000', $price->raw_price_rial);
+        $this->assertSame('690000000', $price->formula_parameters['sell_price_rial']);
+        $this->assertSame('100000000', $price->formula_parameters['settings']['buy_offset_rial']);
+        $this->fakeFeed(buy: 81000000, sell: 80000000);
+        $this->travel(10)->seconds();
+        app(HomeGoldPricingService::class)->refresh(dueOnly: true);
+        $price = $product->fresh()->currentPrice;
+        $this->assertSame('910000000', $price->raw_price_rial);
+        $this->assertSame('700000000', $price->formula_parameters['sell_price_rial']);
+        $this->assertDatabaseCount('product_prices', 2);
+    }
+
+    public function test_invalid_offsets_and_nonpositive_adjusted_prices_are_rejected(): void
+    {
+        $product = $this->product(['id' => 10]);
+        Sanctum::actingAs($this->admin());
+        $url = '/api/v1/admin/homegold/products/'.$product->id;
+        foreach (['buy_offset_rial', 'sell_offset_rial'] as $field) {
+            foreach (['1000000000001', '-1000000000001', 'invalid', '1.5'] as $invalid) {
+                $this->putJson($url, array_merge($this->settings, [$field => $invalid]))
+                    ->assertUnprocessable()->assertJsonValidationErrors($field);
+            }
+        }
+        foreach (['buy_offset_rial', 'sell_offset_rial'] as $field) {
+            $this->postJson($url.'/preview', array_merge($this->settings, [$field => '-10000']))
+                ->assertUnprocessable();
+            $this->putJson($url, array_merge($this->settings, ['mode' => 'auto', $field => '-10000']))
+                ->assertUnprocessable();
+        }
         $this->assertDatabaseCount('product_prices', 0);
     }
 
